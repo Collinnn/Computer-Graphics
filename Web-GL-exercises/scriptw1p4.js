@@ -10,9 +10,10 @@ window.onload = function init(){
         alert("Not supported");
         return;
     }
+
     //Array of points and colors
-    var vertices = [vec2(0.0,0.0),vec2(1.0,1.0),vec2(1.0,0.0)]
-    var colors =[vec4(1.0,0.0,0.0,1.0),vec4(0.0,1.0,0.0,1.0),vec4(0.0,0.0,1.0,1.0)]
+    var vertices = [vec2(0.0,-0.5),vec2(0.5,0.0),vec2(0.0,0.5),vec2(0.0,-0.5),vec2(-0.5,0.0),vec2(0.0,0.5)]
+    var colors =[vec4(1.0,0.0,0.0,1.0),vec4(0.0,1.0,0.0,1.0),vec4(0.0,0.0,1.0,1.0),vec4(1.0,0.0,0.0,1.0),vec4(0.0,1.0,0.0,0.0),vec4(0.0,0.0,1.0,1.0)]
 
     //Canvas setup
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -20,8 +21,24 @@ window.onload = function init(){
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     //import shaders
-    var program = initShaders(gl, "Shaders/vshaderw1p3.glsl", "Shaders/fshaderw1p3.glsl");
+    var program = initShaders(gl, "Shaders/vshaderw1p4.glsl", "Shaders/fshaderw1p4.glsl");
     gl.useProgram(program);
+
+    //Enable simple time for rotation
+    var betaloc= gl.getUniformLocation(program, "beta");
+    var beta = 0.0;
+    
+
+    
+    //tick function to handle time with gl
+    function tick(){
+        //beta ++ the const omega
+        beta +=0.01; 
+        gl.uniform1f(betaloc,beta);
+        render(gl,vertices.length); 
+        requestAnimationFrame(tick);
+    }
+
 
     //create buffer
     var buffer = gl.createBuffer();
@@ -38,19 +55,20 @@ window.onload = function init(){
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferc);
     gl.bufferData(gl.ARRAY_BUFFER,flatten(colors),gl.STATIC_DRAW);
     
+    
     //Enable colors
     var vCol = gl.getAttribLocation( program, "a_Color" );
     gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray(vCol);
 
 
-    render(vertices.length);
+    tick();
     
  
 
 }
 
-function render(points)
+function render(gl,points)
 {
     
     gl.clear(gl.COLOR_BUFFER_BIT);

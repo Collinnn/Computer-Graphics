@@ -11,7 +11,7 @@ window.onload = function init(){
         return;
     }
     //Array of points
-    var array = [vec2(0.0,0.0),vec2(1.0,1.0),vec2(1.0,0.0)]
+    var array = [vec2(0.0,0.5),vec2(-0.5,-0.5),vec2(0.5,-0.5)]
 
     //Canvas setup
     gl.viewport(0, 0, canvas.width, canvas.height);
