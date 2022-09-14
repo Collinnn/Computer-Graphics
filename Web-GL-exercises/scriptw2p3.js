@@ -35,15 +35,16 @@ window.onload = function init(){
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     //import shaders
-    var program = initShaders(gl, "Shaders/vshaderw2p2.glsl", "Shaders/fshaderw2p2.glsl");
+    var program = initShaders(gl, "Shaders/vshaderw2p3.glsl", "Shaders/fshaderw2p3.glsl");
     gl.useProgram(program);
 
     //create vertex buffer
     var max_verts = 1000;
+    var max_triangle= 100;
     var index = 0; var numPoints = 0;
     var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, max_verts*sizeof['vec2'], gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, max_verts*sizeof['vec2']+max_triangle*sizeof['vec2']*3, gl.STATIC_DRAW);
 
     //Enable vertex
     var vPos = gl.getAttribLocation( program, "a_Position" );
@@ -54,31 +55,74 @@ window.onload = function init(){
     var bufferc = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferc);
     gl.bufferData(gl.ARRAY_BUFFER,max_verts*sizeof['vec4'] ,gl.STATIC_DRAW);
-
-
-     
     
     //Enable colors
     var vCol = gl.getAttribLocation( program, "a_Color" );
     gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray(vCol);    
+    gl.enableVertexAttribArray(vCol);  
+    
+     
+    //Get buttons and listen
+    var triangleButton = document.getElementById("triangle");
+    var trianglePressed = false;
+    var pointsPressed = true;
+    
+
+    //Buttons
+    triangleButton.addEventListener("click",function(ev){
+        trianglePressed = true;
+        pointsPressed = false;
+    });
+    var pointsButton = document.getElementById("points");
+    pointsButton.addEventListener("click",function(ev){
+        trianglePressed = false;
+        pointsPressed = true;
+    });
 
     //mouse controls
     var mousepos = vec2(0.0,0.0);
+    var Triarr = [];
+    var Pointarr = [];
+    var spherearr = [];
+    var pointset= 0;
     canvas.addEventListener("click", function (ev) {
         //bbox centers
         var bbox = ev.target.getBoundingClientRect();
         mousepos = vec2(2*(ev.clientX - bbox.left)/canvas.width - 1, 2*(canvas.height - ev.clientY + bbox.top - 1)/canvas.height - 1);
+            switch(pointset){
+                case 0:
+                case 1: 
+                    pointset++;
+                    addPoint(mousepos);
+                    break;
+                case 2:
+                    pointset = pointset-2;
+                    addPoint(mousepos);
+                    if(trianglePressed){
+                        addTriangle()
+                    }
+                    break;
+                default:
+                    break;
+            }
+    });
+    function addPoint(point){
         gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(mousepos));
+        gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(point));
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferc);
         gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec4'], flatten(colors[ColorIndex]));
+        Pointarr.push(index);
         numPoints = Math.max(numPoints, ++index); 
         index %= max_verts;
-    });
+    }
+    function addTriangle(){
+        Triarr.push(Pointarr.pop()-2);
+        Pointarr.pop();
+        Pointarr.pop();
+    }
 
 
-    
+
 
     
     //Clear canvas button
@@ -87,11 +131,14 @@ window.onload = function init(){
         //gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(mousepos));
         numPoints=0;
         index=0;
+        Pointarr = [];
+        Triarr = [];
+        Spherearr = [];
         gl.clearColor(colors[ColorIndex][0],colors[ColorIndex][1],colors[ColorIndex][2],colors[ColorIndex][3])
     });
     
     function tick(){
-        render(gl,numPoints); 
+        render(gl,Triarr,Pointarr); 
         requestAnimationFrame(tick);
     }
     tick();
@@ -101,9 +148,14 @@ window.onload = function init(){
 
 }
 
-function render(gl,points)
+function render(gl,triarr,pointarr)
 {
     
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.POINTS, 0, points);
+    triarr.forEach(element => {
+        gl.drawArrays(gl.TRIANGLES,element,3);
+    });
+    pointarr.forEach(element => {
+        gl.drawArrays(gl.POINTS,element,1);
+    });
 }

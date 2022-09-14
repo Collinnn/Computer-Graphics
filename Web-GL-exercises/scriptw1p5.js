@@ -21,7 +21,6 @@ window.onload = function init(){
         colors.push(vec4(Math.cos(i),Math.cos(i),Math.tan(i),1.0));
 
     };
-    console.log(vertices);
 
 
     
