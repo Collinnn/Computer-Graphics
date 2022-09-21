@@ -33,15 +33,17 @@ window.onload = function init(){
 
 
     var vertices = [
-        vec3(-0.5, -0.5, 0.5),
-        vec3(-0.5, 0.5, 0.5),
-        vec3(0.5, 0.5, 0.5),
-        vec3(0.5, -0.5, 0.5),
-        vec3(-0.5, -0.5, -0.5),
-        vec3(-0.5, 0.5, -0.5),
-        vec3(0.5, 0.5, -0.5),
-        vec3(0.5, -0.5, -0.5)
+        vec3(0.0, 0.0, 1.0),
+        vec3(0.0, 1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 0.0, 1.0),
+        vec3(0.0, 0.0, 0.0),
+        vec3(0.0, 1.0, 0.0),
+        vec3(1.0, 1.0, 0.0),
+        vec3(1.0, 0.0, 0.0)
     ];
+
+
     /*
     var I = mat4(); // identity matrix
     var R = rotate(angle, direction);
@@ -67,26 +69,11 @@ window.onload = function init(){
         [ 0.0, 1.0, 1.0, 1.0 ] // cyan
     ];
     
-    function quad(a, b, c, d)
-    {
-        var indices = [ a, b, c, a, c, d ];
-        for (var i = 0; i < indices.length; ++i) {
-            points.push(vertices[indices[i]]);
-            colors.push(vertexColors[indices[i]]);
-        }
-    }
-    function colorCube(){
-        quad(1, 0, 3, 2);
-        quad(2, 3, 7, 6);
-        quad(3, 0, 4, 7);
-        quad(6, 5, 1, 2);
-        quad(4, 5, 6, 7);
-        quad(5, 4, 0, 1);
-    }
+
     var indices = [
         1, 0, 3,
         3, 2, 1,
-        2, 3, 7,
+        2, 3, 6,
         7, 6, 2,
         3, 0, 4,
         4, 7, 3,
@@ -94,7 +81,7 @@ window.onload = function init(){
         1, 2, 6,
         4, 5, 6,
         6, 7, 4,
-        5, 4, 0,
+        0, 4, 0,
         0, 1, 5
     ];
     //import shaders
@@ -129,12 +116,15 @@ window.onload = function init(){
     gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray(vCol);  
     
+    var eye = vec3(0.5,0.5,0.5);
+    var up = vec3(0.0,1.0,0.0);
+    var at = vec3(1.0,0.0,0.0);
 
-    var w=0;
+    var V = lookAt(eye, at, up);
+    var vloc= gl.getUniformLocation(program, "viewMatrix");
+
+    gl.uniformMatrix4fv(vloc, false, flatten(V));
     function tick(){
-        indices = mult(indices,rotate(w));
-        w+=w+1;
-        rotateX()
         render(gl,numVertices); 
         requestAnimationFrame(tick);
     }
