@@ -66,30 +66,31 @@ window.onload = function init(){
      
     //Get buttons and listen
     var triangleButton = document.getElementById("triangle");
-    var sphereButton = document.getElementById("sphere");
+    var circleButton = document.getElementById("cicle");
+    var pointsButton = document.getElementById("points");
 
     var trianglePressed = false;
     var pointsPressed = true;
-    var spherePressed = false;
+    var circlePressed = false;
     
 
-    //Buttons
+    //Buttons listeners
     triangleButton.addEventListener("click",function(ev){
         trianglePressed = true;
         pointsPressed = false;
-        spherePressed = false;
+        circlePressed = false;
     });
-    var pointsButton = document.getElementById("points");
+
     pointsButton.addEventListener("click",function(ev){
         trianglePressed = false;
         pointsPressed = true;
-        spherePressed = false;
+        circlePressed = false;
     });
 
-    sphereButton.addEventListener("click",function(ev){
+    circleButton.addEventListener("click",function(ev){
         trianglePressed = false;
         pointsPressed = false;
-        spherePressed = true;
+        circlePressed = true;
     });
     
 
@@ -97,7 +98,7 @@ window.onload = function init(){
     var mousepos = vec2(0.0,0.0);
     var Triarr = [];
     var Pointarr = [];
-    var spherearr = [];
+    var circleArr = [];
     var pointset= 0;
     var x,y;
     canvas.addEventListener("click", function (ev) {
@@ -114,16 +115,15 @@ window.onload = function init(){
                 case 2:
                     pointset = pointset-2;
                     addPoint(mousepos);
-                    if(trianglePressed){
-                        addTriangle()
-                    }
+                        addTriangle();
+                    
                     break;
                 default:
                     break;
             }
         } 
 
-        else if(spherePressed){
+        else if(circlePressed){
             switch(pointset){
                 case 0:
                     x=mousepos[0];
@@ -132,25 +132,18 @@ window.onload = function init(){
                     pointset++;
                     break;
                 case 1:
-                    spherearr.push(Pointarr.pop())
-                    var r = Math.sqrt((mousepos[0]-x)*(mousepos[0]-x)+(mousepos[1]-y)*(mousepos[1]-y));
-                    for(var i=0.0;i<=100.0;i++){
-                        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-                        gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(vec2(r*Math.cos(i*2*Math.PI/100.0)+x,r*Math.sin(i*2*Math.PI/100.0)+y)));
-                        gl.bindBuffer(gl.ARRAY_BUFFER, bufferc);
-                        gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec4'], flatten(colors[ColorIndex]));
-                        numPoints = Math.max(numPoints, ++index); 
-                        index %= max_verts;
-                    };
+                    addCircle(mousepos);
                     pointset --;
                     break;
             }
 
         }
         else if(pointsPressed){
+            pointset=0;
             addPoint(mousepos);
         }
     });
+
     function addPoint(point){
         gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(point));
@@ -165,6 +158,18 @@ window.onload = function init(){
         Pointarr.pop();
         Pointarr.pop();
     }
+    function addCircle(mousepos){
+        circleArr.push(Pointarr.pop())
+        var r = Math.sqrt((mousepos[0]-x)*(mousepos[0]-x)+(mousepos[1]-y)*(mousepos[1]-y));
+        for(var i=0.0;i<=100.0;i++){
+            gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(vec2(r*Math.cos(i*2*Math.PI/100.0)+x,r*Math.sin(i*2*Math.PI/100.0)+y)));
+            gl.bindBuffer(gl.ARRAY_BUFFER, bufferc);
+            gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec4'], flatten(colors[ColorIndex]));
+            numPoints = Math.max(numPoints, ++index); 
+            index %= max_verts;
+        };
+    }
 
 
 
@@ -173,17 +178,20 @@ window.onload = function init(){
     //Clear canvas button
     var clearCanvasButton = document.getElementById("clearCanvas");
     clearCanvasButton.addEventListener("click",function(ev){
-        //gl.bufferSubData(gl.ARRAY_BUFFER, index*sizeof['vec2'], flatten(mousepos));
         numPoints=0;
         index=0;
         Pointarr = [];
         Triarr = [];
-        Spherearr = [];
+        circleArr = [];
+        pointsPressed = true;
+        circlePressed = false;
+        trianglePressed = false;
+        pointset = 0;
         gl.clearColor(colors[ColorIndex][0],colors[ColorIndex][1],colors[ColorIndex][2],colors[ColorIndex][3])
     });
     
     function tick(){
-        render(gl,Triarr,Pointarr,spherearr); 
+        render(gl,Triarr,Pointarr,circleArr); 
         requestAnimationFrame(tick);
     }
     tick();
@@ -193,7 +201,7 @@ window.onload = function init(){
 
 }
 
-function render(gl,triarr,pointarr,spherearr)
+function render(gl,triarr,pointarr,circleArr)
 {
     
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -203,7 +211,7 @@ function render(gl,triarr,pointarr,spherearr)
     pointarr.forEach(element => {
         gl.drawArrays(gl.POINTS,element,1);
     });
-    spherearr.forEach(element => {
+    circleArr.forEach(element => {
         gl.drawArrays(gl.TRIANGLE_FAN,element,102);
     });
 }
