@@ -69,9 +69,10 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p1.glsl", "Shaders/fshaderw4p1.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw4p2.glsl", "Shaders/fshaderw4p2.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
 
     function initTetrahedron(gl,numberSubdiv){
         //Tetrahedron
@@ -126,7 +127,7 @@ window.onload = function init(){
     gl.clear(gl.COLOR_BUFFER_BIT);
     //Moves the camera back to get a proper view.
     M =translate(0.0,0.0,-8.0);
-    gl.uniformMatrix4fv(mloc,false,flatten(M));
+
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
     
@@ -156,8 +157,13 @@ window.onload = function init(){
         var c = mult(a, b); // c = a*b
     */
    
-
+    var spin = 0;
     function tick(){
+        M=mult(M,rotateX(spin));
+        M=mult(M,rotateY(spin));
+        M=mult(M,rotateZ(spin));
+        gl.uniformMatrix4fv(mloc,false,flatten(M));
+        spin =1; 
         initTetrahedron(gl,numberSubdiv);
         render(gl); 
         requestAnimationFrame(tick);

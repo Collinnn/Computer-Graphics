@@ -46,8 +46,6 @@ window.onload = function init(){
 
 
     var numVertices = 36;
-    var points = [];
-    var colors = [];
 
     var vertexColors = [
         [ 0.0, 0.0, 0.0, 1.0 ], // black
@@ -115,7 +113,8 @@ window.onload = function init(){
     var P = perspective(45,canvas.width/canvas.height,0.1,20);
     var ploc = gl.getUniformLocation(program,"projectionMatrix");
     gl.uniformMatrix4fv(ploc,false,flatten(P));
-  // lookAt(eye, at, up);
+    //Not used
+    V= lookAt(eye, at, up);
     //Camera postion
     var V = mat4();
     var vloc= gl.getUniformLocation(program, "viewMatrix");
@@ -138,6 +137,7 @@ window.onload = function init(){
         M =translate(squares[i],0.0,-7.5);
         M = mult(M,rotateY(rot[i]));
         if(i==2)M = mult(M,rotateX(-20));
+
         gl.uniformMatrix4fv(mloc,false,flatten(M));
         gl.drawElements(gl.LINES, numVertices, gl.UNSIGNED_BYTE, 0);
     }

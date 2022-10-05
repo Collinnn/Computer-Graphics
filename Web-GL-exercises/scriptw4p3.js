@@ -17,6 +17,7 @@ window.onload = function init(){
 
     gl.vBuffer = null;
     gl.bufferc = null;
+    gl.nbuffer = null;
 
     //Different Colors
     var colors=[
@@ -30,9 +31,18 @@ window.onload = function init(){
         vec4(1.0,1.0,1.0,1.0), // Weiß
         vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
     ]
-
+    
+    var normalsarray = [];
+    var lightAmbient = vec4(0.2,0.2,0.2,1.0);
+    var lightDiffuse = vec4(1.0,1.0,1.0,1.0);
+    var lightSpecular = vec4(1.0,1.0,1.0,1.0);
+    //Set to 0.0 for a directional source light
+    var lightPosition = vec4(0.0,0.0,-1.0,0.0);
 
     function triangle(a,b,c){
+        normalsarray.push(a);
+        normalsarray.push(b);
+        normalsarray.push(c);
         pointsArray.push(a);
         vertexColors.push(vec4(0.5*a[0]+0.5,0.5*a[1]+0.5,0.5*a[2]+0.5,1.0));
         pointsArray.push(b);
@@ -69,9 +79,10 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p1.glsl", "Shaders/fshaderw4p1.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw4p2.glsl", "Shaders/fshaderw4p2.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
 
     function initTetrahedron(gl,numberSubdiv){
         //Tetrahedron
@@ -103,6 +114,17 @@ window.onload = function init(){
         gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
         gl.enableVertexAttribArray(vCol);  
         
+        //Create normal buffer
+        gl.deleteBuffer(gl.nbuffer);
+        gl.nbuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsarray),gl.STATIC_DRAW);
+
+        //Enable normal
+        var nPos = gl.getAttribLocation(gl.program,"normal");
+        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
+        gl.enableVertexAttribArray(nPos);
+
     }
 
     //Prespective matrix
@@ -126,7 +148,7 @@ window.onload = function init(){
     gl.clear(gl.COLOR_BUFFER_BIT);
     //Moves the camera back to get a proper view.
     M =translate(0.0,0.0,-8.0);
-    gl.uniformMatrix4fv(mloc,false,flatten(M));
+
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
     
@@ -156,8 +178,13 @@ window.onload = function init(){
         var c = mult(a, b); // c = a*b
     */
    
-
+    var spin = 0;
     function tick(){
+        M=mult(M,rotateX(spin));
+        M=mult(M,rotateY(spin));
+        M=mult(M,rotateZ(spin));
+        gl.uniformMatrix4fv(mloc,false,flatten(M));
+        spin =1; 
         initTetrahedron(gl,numberSubdiv);
         render(gl); 
         requestAnimationFrame(tick);
