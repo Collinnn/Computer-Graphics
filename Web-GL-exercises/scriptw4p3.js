@@ -32,17 +32,40 @@ window.onload = function init(){
         vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
     ]
     
-    var normalsarray = [];
+    var normalsArray = [];
+    var reflectAmbient, reflectDiffuse, reflectSpecular;
+    var ambientColor, diffuseColor, specularColor;
+    var lightPosition;
     var lightAmbient = vec4(0.2,0.2,0.2,1.0);
     var lightDiffuse = vec4(1.0,1.0,1.0,1.0);
     var lightSpecular = vec4(1.0,1.0,1.0,1.0);
     //Set to 0.0 for a directional source light
-    var lightPosition = vec4(0.0,0.0,-1.0,0.0);
+    lightPosition = vec4(0.0,0.0,-1.0,0.0);
+
+    var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+    var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+    var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var materialShininess = 20.0;
+
+    //Products
+    var ambientProduct = Mult(lightAmbient,materialAmbient);
+    var diffuseProduct = Mult(lightDiffuse,materialDiffuse);
+    var specularProduct = Mult(lightSpecular,materialSpecular);
+
+
+
+
+
 
     function triangle(a,b,c){
-        normalsarray.push(a);
-        normalsarray.push(b);
-        normalsarray.push(c);
+        var t1 = subtract(b, a);
+        var t2 = subtract(c, a);
+        var normal = normalize(cross(t2, t1));
+        normal = vec4(normal);
+    
+        normalsArray.push(normal);
+        normalsArray.push(normal);
+        normalsArray.push(normal);
         pointsArray.push(a);
         vertexColors.push(vec4(0.5*a[0]+0.5,0.5*a[1]+0.5,0.5*a[2]+0.5,1.0));
         pointsArray.push(b);
@@ -142,9 +165,6 @@ window.onload = function init(){
     //Model Matrix
     var mloc =gl.getUniformLocation(gl.program,"modelMatrix");
     
-
-    
-
     gl.clear(gl.COLOR_BUFFER_BIT);
     //Moves the camera back to get a proper view.
     M =translate(0.0,0.0,-8.0);

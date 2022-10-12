@@ -1,5 +1,6 @@
 attribute vec4 v_Position;
 attribute vec4 v_Color;
+attribute vec4 normal;
 uniform mat4 viewMatrix; 
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
