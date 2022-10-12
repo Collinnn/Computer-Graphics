@@ -1,0 +1,1 @@
+collin@DESKTOP-FPAS8QA:/mnt/c/users/Tobias Collin/documents/github/computer-Graphics$ scp -r ./ s183713@transfer.gbar.dtu.dk:~/public_html
