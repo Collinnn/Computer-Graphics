@@ -2,7 +2,18 @@
 var gl;
 var index = 0;
 var pointsArray =[];
-var vertexColors=[];
+    var colors=[
+        vec4(0.0,0.0,0.0,1.0), // Black
+        vec4(1.0,0.0,0.0,1.0), // Red
+        vec4(1.0,1.0,0.0,1.0), // Yellow
+        vec4(0.0,1.0,0.0,1.0), // Green
+        vec4(0.0,0.0,1.0,1.0), // Blue
+        vec4(1.0,0.0,1.0,1.0), // Magenta
+        vec4(0.0,1.0,1.0,1.0), // Cyan
+        vec4(1.0,1.0,1.0,1.0), // Weiß
+        vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
+    ]
+
 window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
     var numberSubdiv=0;
@@ -20,27 +31,24 @@ window.onload = function init(){
     gl.nbuffer = null;
 
     //Different Colors
-    var colors=[
-        vec4(0.0,0.0,0.0,1.0), // Black
-        vec4(1.0,0.0,0.0,1.0), // Red
-        vec4(1.0,1.0,0.0,1.0), // Yellow
-        vec4(0.0,1.0,0.0,1.0), // Green
-        vec4(0.0,0.0,1.0,1.0), // Blue
-        vec4(1.0,0.0,1.0,1.0), // Magenta
-        vec4(0.0,1.0,1.0,1.0), // Cyan
-        vec4(1.0,1.0,1.0,1.0), // Weiß
-        vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
-    ]
+
     
     var normalsArray = [];
-    var reflectAmbient, reflectDiffuse, reflectSpecular;
-    var ambientColor, diffuseColor, specularColor;
     var lightPosition;
-    var lightAmbient = vec4(0.2,0.2,0.2,1.0);
-    var lightDiffuse = vec4(1.0,1.0,1.0,1.0);
-    var lightSpecular = vec4(1.0,1.0,1.0,1.0);
+    var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+    var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 ); 
+    
+    //Tetrahedron
+    var va = vec4(0.0, 0.0, -1.0, 1);
+    var vb = vec4(0.0, 0.942809, 0.333333, 1);
+    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
+
+
     //Set to 0.0 for a directional source light
-    lightPosition = vec4(0.0,0.0,-1.0,0.0);
+    lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+    
 
     var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
     var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
@@ -48,9 +56,9 @@ window.onload = function init(){
     var materialShininess = 20.0;
 
     //Products
-    var ambientProduct = Mult(lightAmbient,materialAmbient);
-    var diffuseProduct = Mult(lightDiffuse,materialDiffuse);
-    var specularProduct = Mult(lightSpecular,materialSpecular);
+    var ambientProduct = mult(lightAmbient,materialAmbient);
+    var diffuseProduct = mult(lightDiffuse,materialDiffuse);
+    var specularProduct = mult(lightSpecular,materialSpecular);
 
 
 
@@ -62,16 +70,13 @@ window.onload = function init(){
         var t2 = subtract(c, a);
         var normal = normalize(cross(t2, t1));
         normal = vec4(normal);
-    
+
         normalsArray.push(normal);
         normalsArray.push(normal);
         normalsArray.push(normal);
         pointsArray.push(a);
-        vertexColors.push(vec4(0.5*a[0]+0.5,0.5*a[1]+0.5,0.5*a[2]+0.5,1.0));
         pointsArray.push(b);
-        vertexColors.push(vec4(0.5*b[0]+0.5,0.5*b[1]+0.5,0.5*b[2]+0.5,1.0));
         pointsArray.push(c);
-        vertexColors.push(vec4(0.5*c[0]+0.5,0.5*c[1]+0.5,0.5*c[2]+0.5,1.0));
         index +=3; 
     }
     function divideTriangle(a,b,c,count){
@@ -102,18 +107,26 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p2.glsl", "Shaders/fshaderw4p2.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw4p3.glsl", "Shaders/fshaderw4p3.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
 
     function initTetrahedron(gl,numberSubdiv){
-        //Tetrahedron
-        var va = vec4(0.0, 0.0, 1.0, 1);
-        var vb = vec4(0.0, 0.942809, -0.333333, 1);
-        var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-        var vd = vec4(0.816497, -0.471405, -0.333333, 1)
+
+
         tretrahedron(va,vb,vc,vd,numberSubdiv);
+        
+        //Create normal buffer
+        gl.deleteBuffer(gl.nbuffer);
+        gl.nbuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
+        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
+        
+        //Enable normal
+        var nPos = gl.getAttribLocation(gl.program,"normal");
+        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
+        gl.enableVertexAttribArray(nPos);
         
         //create vertex buffer
         gl.deleteBuffer(gl.vBuffer);
@@ -125,33 +138,20 @@ window.onload = function init(){
         var vPos = gl.getAttribLocation(gl.program, "v_Position");
         gl.vertexAttribPointer( vPos, 4, gl.FLOAT, false, 0, 0 );
         gl.enableVertexAttribArray(vPos);
-        
-        //create colorbuffer
-        gl.deleteBuffer(gl.bufferc);
-        gl.bufferc = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.bufferc);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
-        
-        //Enable colors
-        var vCol = gl.getAttribLocation( gl.program, "v_Color" );
-        gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
-        gl.enableVertexAttribArray(vCol);  
-        
-        //Create normal buffer
-        gl.deleteBuffer(gl.nbuffer);
-        gl.nbuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsarray),gl.STATIC_DRAW);
 
-        //Enable normal
-        var nPos = gl.getAttribLocation(gl.program,"normal");
-        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
-        gl.enableVertexAttribArray(nPos);
+        
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "lightPosition"), flatten(lightPosition) );
+        gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess );
 
     }
 
+
+
     //Prespective matrix
-    var P = perspective(45,canvas.width/canvas.height,0.1,20);
+    var P = perspective(45,canvas.width/canvas.height,0.1,100.0);
     var ploc = gl.getUniformLocation(gl.program,"projectionMatrix");
     gl.uniformMatrix4fv(ploc,false,flatten(P));
 
@@ -159,15 +159,15 @@ window.onload = function init(){
     //Camera postion
     var V = mat4();
     var vloc= gl.getUniformLocation(gl.program, "viewMatrix");
-    gl.uniformMatrix4fv(vloc, false, flatten(V));
+    
     
 
     //Model Matrix
     var mloc =gl.getUniformLocation(gl.program,"modelMatrix");
-    
-    gl.clear(gl.COLOR_BUFFER_BIT);
+
     //Moves the camera back to get a proper view.
     M =translate(0.0,0.0,-8.0);
+
 
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
@@ -200,12 +200,18 @@ window.onload = function init(){
    
     var spin = 0;
     function tick(){
-        M=mult(M,rotateX(spin));
-        M=mult(M,rotateY(spin));
-        M=mult(M,rotateZ(spin));
+        //M=mult(M,rotateX(spin));
+        //M=mult(M,rotateY(spin));
+        //M=mult(M,rotateZ(spin));
+
+        V=mult(translate(0.0,0.0,-8.0),rotateX(spin));
+
+        V=translate(0.0,0.0,0.0);
         gl.uniformMatrix4fv(mloc,false,flatten(M));
+        gl.uniformMatrix4fv(vloc, false, flatten(V));
         spin =1; 
         initTetrahedron(gl,numberSubdiv);
+       
         render(gl); 
         requestAnimationFrame(tick);
     }
@@ -214,6 +220,7 @@ window.onload = function init(){
 
 function render(gl)
 {
-    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES,0,index);
+
 }
