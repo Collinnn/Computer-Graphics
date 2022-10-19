@@ -10,7 +10,7 @@ varying vec4 fColor;
 
 void main() {
     
-    vec3 pos = (modelMatrix*viewMatrix*v_Position).xyz;
+    vec3 pos = (modelMatrix*v_Position).xyz;
     vec3 light = (lightPosition).xyz;
     vec3 L = lightPosition.w == 0.0 ? normalize(light) : normalize(light - pos);
     vec3 E = -normalize(pos);
@@ -19,17 +19,11 @@ void main() {
 
 
     // Compute terms in the illumination equation
-    vec4 ambient = ambientProduct;
-    float Kd = max(dot(L, N), 0.0);
-    vec4 diffuse = Kd * diffuseProduct;
-    float Ks = pow(max(dot(N, H), 0.0), shininess);
-    vec4 specular = Ks * specularProduct;
-    if (dot(L, N) < 0.0) {
-    specular = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+
+  
     gl_Position  = projectionMatrix*viewMatrix*modelMatrix*v_Position;
-    fColor = ambient + diffuse + specular;
-    fColor.a = 1.0;
+    fColor = ambientProduct + diffuseProduct* max(dot(pos,normalize(L)),0.0) + vec4(0,0,0,1);
+
     
 
 }

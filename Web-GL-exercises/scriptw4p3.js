@@ -2,17 +2,17 @@
 var gl;
 var index = 0;
 var pointsArray =[];
-    var colors=[
-        vec4(0.0,0.0,0.0,1.0), // Black
-        vec4(1.0,0.0,0.0,1.0), // Red
-        vec4(1.0,1.0,0.0,1.0), // Yellow
-        vec4(0.0,1.0,0.0,1.0), // Green
-        vec4(0.0,0.0,1.0,1.0), // Blue
-        vec4(1.0,0.0,1.0,1.0), // Magenta
-        vec4(0.0,1.0,1.0,1.0), // Cyan
-        vec4(1.0,1.0,1.0,1.0), // Weiß
-        vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
-    ]
+var colors=[
+    vec4(0.0,0.0,0.0,1.0), // Black
+    vec4(1.0,0.0,0.0,1.0), // Red
+    vec4(1.0,1.0,0.0,1.0), // Yellow
+    vec4(0.0,1.0,0.0,1.0), // Green
+    vec4(0.0,0.0,1.0,1.0), // Blue
+    vec4(1.0,0.0,1.0,1.0), // Magenta
+    vec4(0.0,1.0,1.0,1.0), // Cyan
+    vec4(1.0,1.0,1.0,1.0), // Weiß
+    vec4(0.3921, 0.5843, 0.9294, 1.0), // Cornflower
+]
 
 window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
@@ -47,7 +47,7 @@ window.onload = function init(){
 
 
     //Set to 0.0 for a directional source light
-    lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+    lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
     
 
     var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
@@ -59,6 +59,7 @@ window.onload = function init(){
     var ambientProduct = mult(lightAmbient,materialAmbient);
     var diffuseProduct = mult(lightDiffuse,materialDiffuse);
     var specularProduct = mult(lightSpecular,materialSpecular);
+    
 
 
 
@@ -117,16 +118,7 @@ window.onload = function init(){
 
         tretrahedron(va,vb,vc,vd,numberSubdiv);
         
-        //Create normal buffer
-        gl.deleteBuffer(gl.nbuffer);
-        gl.nbuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
-        
-        //Enable normal
-        var nPos = gl.getAttribLocation(gl.program,"normal");
-        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
-        gl.enableVertexAttribArray(nPos);
+
         
         //create vertex buffer
         gl.deleteBuffer(gl.vBuffer);
@@ -147,7 +139,18 @@ window.onload = function init(){
         gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess );
 
     }
-
+    
+    
+    //Create normal buffer
+    gl.deleteBuffer(gl.nbuffer);
+    gl.nbuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
+        
+    //Enable normal
+    var nPos = gl.getAttribLocation(gl.program,"normal");
+    gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
+    gl.enableVertexAttribArray(nPos);
 
 
     //Prespective matrix
@@ -157,7 +160,13 @@ window.onload = function init(){
 
 
     //Camera postion
-    var V = mat4();
+    var theta = 0;
+    var radius = 8;
+    eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
+    look = vec3(0,0,0);
+    up = vec3(0,1,0);
+    var V= lookAt(eye,look,up);
+
     var vloc= gl.getUniformLocation(gl.program, "viewMatrix");
     
     
@@ -166,7 +175,7 @@ window.onload = function init(){
     var mloc =gl.getUniformLocation(gl.program,"modelMatrix");
 
     //Moves the camera back to get a proper view.
-    M =translate(0.0,0.0,-8.0);
+    M =mat4();
 
 
     var increaseButton = document.getElementById("IncreaseDepth");
@@ -174,6 +183,9 @@ window.onload = function init(){
     
     increaseButton.addEventListener("click",function(ev){
         numberSubdiv ++;
+        pointsArray = [];
+        vertexColors = [];
+        index = 0;
     });
 
     decreaseButton.addEventListener("click",function(ev){
@@ -197,21 +209,19 @@ window.onload = function init(){
         var T = translate(t_x, t_y, t_z);
         var c = mult(a, b); // c = a*b
     */
-   
+
     var spin = 0;
     function tick(){
-        //M=mult(M,rotateX(spin));
-        //M=mult(M,rotateY(spin));
-        //M=mult(M,rotateZ(spin));
-
-        V=mult(translate(0.0,0.0,-8.0),rotateX(spin));
-
-        V=translate(0.0,0.0,0.0);
+        M=mult(M,rotateX(spin));
+        M=mult(M,rotateY(spin));
+        M=mult(M,rotateZ(spin));
+        theta+=0.01;
         gl.uniformMatrix4fv(mloc,false,flatten(M));
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         spin =1; 
         initTetrahedron(gl,numberSubdiv);
-       
+        eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
+        V= lookAt(eye,look,up);
         render(gl); 
         requestAnimationFrame(tick);
     }
