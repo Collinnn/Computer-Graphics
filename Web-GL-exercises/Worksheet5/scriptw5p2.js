@@ -30,10 +30,10 @@ window.onload = function init(){
     gl.nbuffer = null;
 
     //Tetrahedron
-    var va = vec4(0.0, 0.0, 1.0, 1);
-    var vb = vec4(0.0, 0.942809, -0.333333, 1);
-    var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-    var vd = vec4(0.816497, -0.471405, -0.333333, 1);
+    var va = vec4(0.0, 0.0, -1.0, 1);
+    var vb = vec4(0.0, 0.942809, 0.333333, 1);
+    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
 
     var normalsArray = [];
     var lightPosition;
@@ -56,7 +56,60 @@ window.onload = function init(){
     var diffuseProduct = mult(lightDiffuse,materialDiffuse);
     var specularProduct = mult(lightSpecular,materialSpecular);
     
-    
+    function initObject(gl, obj_filename, scale)
+    {
+        gl.program.a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+        gl.program.a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
+        gl.program.a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+        // Prepare empty buffer objects for vertex coordinates, colors, and normals
+        var model = initVertexBuffers(gl);
+        // Start reading the OBJ file
+        readOBJFile("../Models/Suzanne.obj", gl, model, scale, true);
+        return model;
+    }
+        // Create a buffer object and perform the initial configuration
+        function initVertexBuffers(gl,program) { 
+            var o = new Object();
+            o.vertexBuffer = createEmptyArrayBuffer(gl,program.a_Position,3,gl.FLOAT);
+            o.normalBuffer = createEmptyArrayBuffer(gl,program.a_Normal,3,gl.FLOAT);
+            o.colorBuffer = createEmptyArrayBuffer(gl,program.a_Color,4,gl.FLOAT);
+        }
+
+        function createEmptyArrayBuffer(gl, a_attribute, num, type) { 
+            var buffer = gl.createBuffer(); // Create a buffer object
+            gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+            gl.vertexAttribPointer(a_attribute,num,type,false,0,0);
+            gl.enableVertexAttribArray(a_attribute);
+            return buffer;
+        }
+
+
+        var g_objDoc = null; // Info parsed from OBJ file
+        var g_drawingInfo = null; // Info for drawing the 3D model with WebGL
+        // Asynchronous file loading (request, parse, send to GPU buffers)
+        function readOBJFile(fileName, gl, model, scale, reverse) { 
+            var request = new XMLHttpRequest();
+
+            request.onreadystatechange= function(){
+                if(request.readyState===4 && request.status !==404){
+                    onReadOBJFile(request.responseText,fileName,gl,model,scale,reverse);
+                }
+            }
+            request.open('GET',fileName,true); //Create request
+            request.send();
+        }
+        function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) { 
+            var objDoc = new OBJDoc(fileName);
+            var result = objDoc.parse(fileString,scale,reverse);
+            if(!result){
+                g_objDoc = null; g_drawingInfo = null;
+                console.log("OBJ file has a passing error");
+            }
+
+        }
+        function onReadComplete(gl, model, objDoc) { 
+            
+         }
 
 
 
@@ -99,7 +152,7 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p4.glsl", "Shaders/fshaderw4p4.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw4p5.glsl", "Shaders/fshaderw4p5.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
@@ -133,7 +186,7 @@ window.onload = function init(){
         gl.enableVertexAttribArray(nPos);
     }
     
-    //Location lock for lighting (In this only diffuse is used)
+    //Location lock for lighting
     gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
@@ -257,7 +310,6 @@ window.onload = function init(){
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         initTetrahedron(gl,numberSubdiv);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
-        gl.uniform3fv( gl.getUniformLocation(gl.program, "eyepos"), flatten(eye));
         V= lookAt(eye,look,up);
         render(gl); 
         requestAnimationFrame(tick);
@@ -268,6 +320,12 @@ window.onload = function init(){
 function render(gl)
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES,0,index);
+    if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) {
+        // OBJ and all MTLs are available
+        g_drawingInfo = onReadComplete(gl, model, g_objDoc);
+        }
+    if (!g_drawingInfo) return;
+
+    gl.drawElements(gl.TRIANGLES,g_drawingInfo.indicies.length,gl.UNSIGNED_SHORT,0);
 
 }

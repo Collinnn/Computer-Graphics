@@ -69,17 +69,9 @@ window.onload = function init(){
 
 
     function triangle(a,b,c){
-        var t1 = subtract(b, a);
-        var t2 = subtract(c, a);
-        var normal = normalize(cross(t2, t1));
-        normal = vec4(normal);
         vertexColors.push(vec4(0.5*a[0]+0.5,0.5*a[1]+0.5,0.5*a[2]+0.5,1.0));
         vertexColors.push(vec4(0.5*b[0]+0.5,0.5*b[1]+0.5,0.5*b[2]+0.5,1.0));
         vertexColors.push(vec4(0.5*c[0]+0.5,0.5*c[1]+0.5,0.5*c[2]+0.5,1.0));
-
-        normalsArray.push(normal);
-        normalsArray.push(normal);
-        normalsArray.push(normal);
         pointsArray.push(a);
         pointsArray.push(b);
         pointsArray.push(c);

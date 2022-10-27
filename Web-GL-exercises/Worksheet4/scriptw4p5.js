@@ -30,10 +30,10 @@ window.onload = function init(){
     gl.nbuffer = null;
 
     //Tetrahedron
-    var va = vec4(0.0, 0.0, 1.0, 1);
-    var vb = vec4(0.0, 0.942809, -0.333333, 1);
-    var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-    var vd = vec4(0.816497, -0.471405, -0.333333, 1);
+    var va = vec4(0.0, 0.0, -1.0, 1);
+    var vb = vec4(0.0, 0.942809, 0.333333, 1);
+    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
 
     var normalsArray = [];
     var lightPosition;
@@ -99,7 +99,7 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p4.glsl", "Shaders/fshaderw4p4.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw4p5.glsl", "Shaders/fshaderw4p5.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
@@ -133,7 +133,7 @@ window.onload = function init(){
         gl.enableVertexAttribArray(nPos);
     }
     
-    //Location lock for lighting (In this only diffuse is used)
+    //Location lock for lighting
     gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
@@ -257,7 +257,6 @@ window.onload = function init(){
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         initTetrahedron(gl,numberSubdiv);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
-        gl.uniform3fv( gl.getUniformLocation(gl.program, "eyepos"), flatten(eye));
         V= lookAt(eye,look,up);
         render(gl); 
         requestAnimationFrame(tick);
