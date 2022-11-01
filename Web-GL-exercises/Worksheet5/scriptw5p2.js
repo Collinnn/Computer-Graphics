@@ -1,3 +1,4 @@
+
 var gl;
 var index = 0;
 var pointsArray =[];
@@ -29,12 +30,6 @@ window.onload = function init(){
     gl.bufferc = null;
     gl.nbuffer = null;
 
-    //Tetrahedron
-    var va = vec4(0.0, 0.0, -1.0, 1);
-    var vb = vec4(0.0, 0.942809, 0.333333, 1);
-    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
-
     var normalsArray = [];
     var lightPosition;
     var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
@@ -58,13 +53,13 @@ window.onload = function init(){
     
     function initObject(gl, obj_filename, scale)
     {
-        gl.program.a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-        gl.program.a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
-        gl.program.a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+        gl.program.v_Position = gl.getAttribLocation(gl.program, 'v_Position');
+        gl.program.normal = gl.getAttribLocation(gl.program, 'normal');
+        gl.program.v_Color = gl.getAttribLocation(gl.program, 'v_Color');
         // Prepare empty buffer objects for vertex coordinates, colors, and normals
         var model = initVertexBuffers(gl);
         // Start reading the OBJ file
-        readOBJFile("../Models/Suzanne.obj", gl, model, scale, true);
+        readOBJFile(obj_filename, gl, model, scale, true);
         return model;
     }
         // Create a buffer object and perform the initial configuration
@@ -73,8 +68,10 @@ window.onload = function init(){
             o.vertexBuffer = createEmptyArrayBuffer(gl,program.a_Position,3,gl.FLOAT);
             o.normalBuffer = createEmptyArrayBuffer(gl,program.a_Normal,3,gl.FLOAT);
             o.colorBuffer = createEmptyArrayBuffer(gl,program.a_Color,4,gl.FLOAT);
+            o.indexBuffer = gl.createBuffer();
+            return o;
         }
-
+        
         function createEmptyArrayBuffer(gl, a_attribute, num, type) { 
             var buffer = gl.createBuffer(); // Create a buffer object
             gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
@@ -98,52 +95,39 @@ window.onload = function init(){
             request.open('GET',fileName,true); //Create request
             request.send();
         }
+
+
         function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) { 
             var objDoc = new OBJDoc(fileName);
             var result = objDoc.parse(fileString,scale,reverse);
             if(!result){
-                g_objDoc = null; g_drawingInfo = null;
+                g_objDoc = null; 
+                g_drawingInfo = null;
                 console.log("OBJ file has a passing error");
+                return;
             }
+            g_objDoc=objDoc;
 
         }
+
+        model = initObject(gl,"../Models/Suzanne.obj",10);
         function onReadComplete(gl, model, objDoc) { 
+            var drawingInfo = objDoc.getDrawingInfo();
             
-         }
+            //write into buffer object
+            gl.bindBuffer(gl.ARRAY_BUFFER,model.vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
 
+            gl.bindBuffer(gl.ARRAY_BUFFER,model.normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER,model.colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.colors,gl.STATIC_DRAW);
 
-
-
-
-    function triangle(a,b,c){
-        normalsArray.push(vec4(a[0],a[1],a[2],0));
-        normalsArray.push(vec4(b[0],b[1],b[2],0));
-        normalsArray.push(vec4(c[0],c[1],c[2],0));
-        pointsArray.push(a);
-        pointsArray.push(b);
-        pointsArray.push(c);
-        index +=3; 
-    }
-    function divideTriangle(a,b,c,count){
-        if(count >0){
-            var ab = normalize(mix(a, b, 0.5),true);
-            var ac = normalize(mix(a, c , 0.5),true);
-            var bc = normalize(mix(b, c, 0.5), true);
-            divideTriangle(a, ab, ac, count - 1);
-            divideTriangle(ab, b, bc, count - 1);
-            divideTriangle(bc, c, ac, count - 1);
-            divideTriangle(ab, bc, ac, count - 1);
-        }else {
-            triangle(a, b, c);
+            //writes the indices to the buffer object
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,model.indexBuffer);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,drawingInfo.indicies);
+            return drawingInfo;
         }
-    }
-    function tretrahedron(a,b,c,d,n){
-        divideTriangle(a,b,c,n);
-        divideTriangle(d,c,b,n);
-        divideTriangle(a,d,b,n);
-        divideTriangle(a,c,d,n);
-
-    }
     
     //Canvas setup
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -152,39 +136,11 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw4p5.glsl", "Shaders/fshaderw4p5.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw5p2.glsl", "Shaders/fshaderw5p2.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     
-
-
-    function initTetrahedron(gl,numberSubdiv){
-
-        tretrahedron(va,vb,vc,vd,numberSubdiv);
-
-        //create vertex buffer
-        gl.deleteBuffer(gl.vBuffer);
-        gl.vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.vBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-
-        //Enable vertex
-        var vPos = gl.getAttribLocation(gl.program, "v_Position");
-        gl.vertexAttribPointer( vPos, 4, gl.FLOAT, false, 0, 0 );
-        gl.enableVertexAttribArray(vPos);
-
-        //Create normal buffer
-        gl.deleteBuffer(gl.nbuffer);
-        gl.nbuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
-        
-        //Enable normal
-        var nPos = gl.getAttribLocation(gl.program,"normal");
-        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
-        gl.enableVertexAttribArray(nPos);
-    }
     
     //Location lock for lighting
     gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
@@ -323,8 +279,11 @@ function render(gl)
     if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) {
         // OBJ and all MTLs are available
         g_drawingInfo = onReadComplete(gl, model, g_objDoc);
+        console.log("Model has been loaded");
         }
-    if (!g_drawingInfo) return;
+    if (!g_drawingInfo){
+        render(gl);
+    }
 
     gl.drawElements(gl.TRIANGLES,g_drawingInfo.indicies.length,gl.UNSIGNED_SHORT,0);
 

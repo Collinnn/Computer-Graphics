@@ -1,5 +1,6 @@
 precision mediump float;
 varying vec3 N,L,E;
+varying vec4 color;
 uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform float shininess;
 void main() {
