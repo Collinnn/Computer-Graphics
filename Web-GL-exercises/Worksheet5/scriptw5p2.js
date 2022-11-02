@@ -2,6 +2,8 @@
 var gl;
 var index = 0;
 var pointsArray =[];
+var g_objDoc = null; 
+var g_drawingInfo = null;
 var colors=[
     vec4(0.0,0.0,0.0,1.0), // Black
     vec4(1.0,0.0,0.0,1.0), // Red
@@ -16,10 +18,14 @@ var colors=[
 
 window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
-    var numberSubdiv=0;
-
 
     gl = WebGLUtils.setupWebGL(canvas);
+    
+    //import shaders
+    gl.program = initShaders(gl, "Shaders/vshaderw5p2.glsl", "Shaders/fshaderw5p2.glsl");
+    gl.useProgram(gl.program);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
     
     if(gl == null){
         alert("Not supported");
@@ -30,7 +36,6 @@ window.onload = function init(){
     gl.bufferc = null;
     gl.nbuffer = null;
 
-    var normalsArray = [];
     var lightPosition;
     var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
     var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -65,9 +70,9 @@ window.onload = function init(){
         // Create a buffer object and perform the initial configuration
         function initVertexBuffers(gl,program) { 
             var o = new Object();
-            o.vertexBuffer = createEmptyArrayBuffer(gl,program.a_Position,3,gl.FLOAT);
-            o.normalBuffer = createEmptyArrayBuffer(gl,program.a_Normal,3,gl.FLOAT);
-            o.colorBuffer = createEmptyArrayBuffer(gl,program.a_Color,4,gl.FLOAT);
+            o.vertexBuffer = createEmptyArrayBuffer(gl,gl.program.v_Position,3,gl.FLOAT);
+            o.normalBuffer = createEmptyArrayBuffer(gl,gl.program.normal,3,gl.FLOAT);
+            o.colorBuffer = createEmptyArrayBuffer(gl,gl.program.v_Color,4,gl.FLOAT);
             o.indexBuffer = gl.createBuffer();
             return o;
         }
@@ -79,10 +84,6 @@ window.onload = function init(){
             gl.enableVertexAttribArray(a_attribute);
             return buffer;
         }
-
-
-        var g_objDoc = null; // Info parsed from OBJ file
-        var g_drawingInfo = null; // Info for drawing the 3D model with WebGL
         // Asynchronous file loading (request, parse, send to GPU buffers)
         function readOBJFile(fileName, gl, model, scale, reverse) { 
             var request = new XMLHttpRequest();
@@ -110,36 +111,17 @@ window.onload = function init(){
 
         }
 
-        model = initObject(gl,"../Models/Suzanne.obj",10);
-        function onReadComplete(gl, model, objDoc) { 
-            var drawingInfo = objDoc.getDrawingInfo();
-            
-            //write into buffer object
-            gl.bindBuffer(gl.ARRAY_BUFFER,model.vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+        var model = initObject(gl,"../Models/Suzanne.obj",1);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER,model.normalBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
-            gl.bindBuffer(gl.ARRAY_BUFFER,model.colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.colors,gl.STATIC_DRAW);
 
-            //writes the indices to the buffer object
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,model.indexBuffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,drawingInfo.indicies);
-            return drawingInfo;
-        }
-    
+
     //Canvas setup
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(colors[8][0],colors[8][1],colors[8][2],colors[8][3]);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     
-    //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw5p2.glsl", "Shaders/fshaderw5p2.glsl");
-    gl.useProgram(gl.program);
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
+
     
     
     //Location lock for lighting
@@ -177,72 +159,7 @@ window.onload = function init(){
     M =mat4();
 
 
-    var increaseButton = document.getElementById("IncreaseDepth");
-    var decreaseButton = document.getElementById("DecreaseDepth");
-    var ambientSlider = document.getElementById("AmbientSlider");
-    var diffuseSlider = document.getElementById("DiffuseSlider");
-    var SpecularSlider = document.getElementById("SpecularSlider");
-    var ShinySlider = document.getElementById("ShinySlider");
-    var LightEmission = document.getElementById("LightEmission");
-    
-    increaseButton.addEventListener("click",function(ev){
-        numberSubdiv ++;
-        pointsArray = [];
-        normalsArray= [];
-        index = 0;
-    });
 
-    decreaseButton.addEventListener("click",function(ev){
-        if(numberSubdiv != 0){
-            numberSubdiv --;
-        }
-        pointsArray = [];
-        normalsArray= [];
-        index = 0;
-        
-    });
-    
-    
-    ambientSlider.addEventListener("input",function(ev){
-        var a = ambientSlider.value;
-        materialAmbient = vec4(a,a,a,1.0); 
-        ambientProduct = mult(lightAmbient,materialAmbient);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
-    });
-    diffuseSlider.addEventListener("input",function(ev){
-        var a = diffuseSlider.value;
-        //Set green to zero
-        materialDiffuse = vec4(a,a,a,1.0); 
-        diffuseProduct = mult(lightDiffuse,materialDiffuse);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
-    });
-    SpecularSlider.addEventListener("input",function(ev){
-        var a = SpecularSlider.value;
-        materialSpecular = vec4(a,a,a,1.0); 
-        specularProduct = mult(lightSpecular,materialSpecular);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
-    });
-
-    ShinySlider.addEventListener("input",function(ev){
-        var a = ShinySlider.value;
-        materialShininess = a;
-        gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess);
-    });
-    LightEmission.addEventListener("input",function(ev){
-        var a = LightEmission.value;
-        
-        lightAmbient = vec4(a,a,a,1.0);
-        lightDiffuse = vec4(a,a,a,1.0);
-        lightSpecular = vec4(a,a,a,1.0); 
-        ambientProduct = mult(lightAmbient,materialAmbient);
-        diffuseProduct = mult(lightDiffuse,materialDiffuse);
-        specularProduct = mult(lightSpecular,materialSpecular);
-
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
-    });
-    
 
 
     /*
@@ -264,16 +181,16 @@ window.onload = function init(){
         theta+=0.01;
         gl.uniformMatrix4fv(mloc,false,flatten(M));
         gl.uniformMatrix4fv(vloc, false, flatten(V));
-        initTetrahedron(gl,numberSubdiv);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
+        gl.uniform3fv( gl.getUniformLocation(gl.program, "eyepos"), flatten(eye));
         V= lookAt(eye,look,up);
-        render(gl); 
+        render(gl,model); 
         requestAnimationFrame(tick);
     }
     tick();
 }
 
-function render(gl)
+function render(gl,model)
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) {
@@ -282,9 +199,28 @@ function render(gl)
         console.log("Model has been loaded");
         }
     if (!g_drawingInfo){
-        render(gl);
+        return;
     }
 
-    gl.drawElements(gl.TRIANGLES,g_drawingInfo.indicies.length,gl.UNSIGNED_SHORT,0);
+    gl.drawElements(gl.TRIANGLES,g_drawingInfo.indices.length,gl.UNSIGNED_SHORT,0);
 
+}
+function onReadComplete(gl, model, objDoc) { 
+    var drawingInfo = objDoc.getDrawingInfo();
+    
+    //write into buffer object
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.colors,gl.STATIC_DRAW);
+
+    //writes the indices to the buffer object
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,model.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,drawingInfo.indices,gl.STATIC_DRAW );
+
+    return drawingInfo;
 }

@@ -167,7 +167,7 @@ window.onload = function init(){
     //Moves the camera back to get a proper view.
     M =mat4();
 
-
+    /*Controllers */
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
     var ambientSlider = document.getElementById("AmbientSlider");
@@ -202,7 +202,6 @@ window.onload = function init(){
     });
     diffuseSlider.addEventListener("input",function(ev){
         var a = diffuseSlider.value;
-        //Set green to zero
         materialDiffuse = vec4(a,a,a,1.0); 
         diffuseProduct = mult(lightDiffuse,materialDiffuse);
         gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
