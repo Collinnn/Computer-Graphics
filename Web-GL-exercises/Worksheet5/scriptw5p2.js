@@ -131,7 +131,12 @@ window.onload = function init(){
     gl.uniform4fv( gl.getUniformLocation(gl.program, "lightPosition"), flatten(lightPosition) );
     gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess );
 
-
+    
+    var ambientSlider = document.getElementById("AmbientSlider");
+    var diffuseSlider = document.getElementById("DiffuseSlider");
+    var SpecularSlider = document.getElementById("SpecularSlider");
+    var ShinySlider = document.getElementById("ShinySlider");
+    var LightEmission = document.getElementById("LightEmission");
 
 
     //Prespective matrix
@@ -157,7 +162,46 @@ window.onload = function init(){
 
     //Moves the camera back to get a proper view.
     M =mat4();
+       
+    ambientSlider.addEventListener("input",function(ev){
+        var a = ambientSlider.value;
+        materialAmbient = vec4(a,a,a,1.0); 
+        ambientProduct = mult(lightAmbient,materialAmbient);
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
+    });
+    diffuseSlider.addEventListener("input",function(ev){
+        var a = diffuseSlider.value;
+        //Set green to zero
+        materialDiffuse = vec4(a,a,a,1.0); 
+        diffuseProduct = mult(lightDiffuse,materialDiffuse);
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
+    });
+    SpecularSlider.addEventListener("input",function(ev){
+        var a = SpecularSlider.value;
+        materialSpecular = vec4(a,a,a,1.0); 
+        specularProduct = mult(lightSpecular,materialSpecular);
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
+    });
 
+    ShinySlider.addEventListener("input",function(ev){
+        var a = ShinySlider.value;
+        materialShininess = a;
+        gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess);
+    });
+    LightEmission.addEventListener("input",function(ev){
+        var a = LightEmission.value;
+        
+        lightAmbient = vec4(a,a,a,1.0);
+        lightDiffuse = vec4(a,a,a,1.0);
+        lightSpecular = vec4(a,a,a,1.0); 
+        ambientProduct = mult(lightAmbient,materialAmbient);
+        diffuseProduct = mult(lightDiffuse,materialDiffuse);
+        specularProduct = mult(lightSpecular,materialSpecular);
+
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
+        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
+    });    
 
 
 

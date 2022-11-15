@@ -1,0 +1,45 @@
+<html>
+<head>        
+<script type="text/javascript"src=../Angel/webgl-utils.js></script>
+<script type="text/javascript"src=../Angel/initShaders2.js></script>
+<script type="text/javascript"src=../Angel/MV.js></script>
+<script type="text/javascript"src="../Angel/OBJParser.js"></script>
+
+<script src="scriptw6p2.js"></script>
+</head>
+<title>Week Six part 2</title>
+<body>
+    <table>
+        <tbody>
+            <tr>
+                <td>Wrap methods</td>
+                <td>Filtering methods</td>
+            </tr>
+            <tr>
+                <td>
+                    <select id="WrappingMenu" size="2">
+                        <option value="repeat" selected>Repeat</option>
+                        <option value="clamp" selected>Clamping-to-edge</option>
+                    </select>
+                </td>
+                <td>
+                    <select id ="filterMenu" size="3">
+                        <option value="nearest" selected>Nearest</option>
+                        <option value="linear">Linear</option>
+                        <option value="mipmap">Mipmap</option>
+                    </select>
+                </td>
+            </tr>
+        </tbody>
+
+    </table>
+<canvas id="gl-canvas" width="512" height="512">
+<!-- The following message is displayed if the browser doesn’t
+-- support HTML5 -->
+Sorry; your web browser does not support HTML5 canvas element.
+</canvas>
+
+
+
+</body>
+</html>
