@@ -159,7 +159,7 @@ window.onload = function init(){
 		// Insert WebGL texture initialization here
 		var texture = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
+		gl.uniform1i(gl.getUniformLocation(program, "Texmap"), 0);
 
 		// gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -169,10 +169,8 @@ window.onload = function init(){
 
 		imageLoaded = true;
 	};
-	image.src = "earth.jpg";
-    // Load planet-earth-map image: 
-    const texURL = "Assets/earth.jpg";
-    loadTexture(gl, texURL);
+	image.src = "../models/earth.jpg";
+
 
     //Camera postion
     var theta = 0;
