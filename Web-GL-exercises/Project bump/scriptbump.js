@@ -1,6 +1,7 @@
 var gl;
 var index = 0;
 var pointsArray =[];
+var vertexColors=[];
 var colors=[
     vec4(0.0,0.0,0.0,1.0), // Black
     vec4(1.0,0.0,0.0,1.0), // Red
@@ -29,11 +30,16 @@ window.onload = function init(){
     gl.bufferc = null;
     gl.nbuffer = null;
 
+    //Different Colors
+
+    
+
+    
     //Tetrahedron
-    var va = vec4(0.0, 0.0, 1.0, 1);
-    var vb = vec4(0.0, 0.942809, -0.333333, 1);
-    var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
-    var vd = vec4(0.816497, -0.471405, -0.333333, 1);
+    var va = vec4(0.0, 0.0, -1.0, 1);
+    var vb = vec4(0.0, 0.942809, 0.333333, 1);
+    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
 
     var normalsArray = [];
     var lightPosition;
@@ -46,26 +52,26 @@ window.onload = function init(){
     lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
     
 
-    var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
     var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
     var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
     var materialShininess = 20.0;
 
     //Products
-    var ambientProduct = mult(lightAmbient,materialAmbient);
+    var ambientProduct = vec4(0.0,0.0,0.0,1.0);//mult(lightAmbient,materialAmbient);
     var diffuseProduct = mult(lightDiffuse,materialDiffuse);
     var specularProduct = mult(lightSpecular,materialSpecular);
     
-    
+
 
 
 
 
 
     function triangle(a,b,c){
-        normalsArray.push(vec4(a[0],a[1],a[2],0));
-        normalsArray.push(vec4(b[0],b[1],b[2],0));
-        normalsArray.push(vec4(c[0],c[1],c[2],0));
+        vertexColors.push(vec4(0.5*a[0]+0.5,0.5*a[1]+0.5,0.5*a[2]+0.5,1.0));
+        vertexColors.push(vec4(0.5*b[0]+0.5,0.5*b[1]+0.5,0.5*b[2]+0.5,1.0));
+        vertexColors.push(vec4(0.5*c[0]+0.5,0.5*c[1]+0.5,0.5*c[2]+0.5,1.0));
         pointsArray.push(a);
         pointsArray.push(b);
         pointsArray.push(c);
@@ -99,12 +105,10 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw6p3.glsl", "Shaders/fshaderw6p3.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderbump.glsl", "Shaders/fshaderbump.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
-    
-
 
     function initTetrahedron(gl,numberSubdiv){
 
@@ -115,64 +119,48 @@ window.onload = function init(){
         gl.vBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, gl.vBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-
+        
         //Enable vertex
         var vPos = gl.getAttribLocation(gl.program, "v_Position");
         gl.vertexAttribPointer( vPos, 4, gl.FLOAT, false, 0, 0 );
         gl.enableVertexAttribArray(vPos);
-
-        //Create normal buffer
-        gl.deleteBuffer(gl.nbuffer);
-        gl.nbuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
         
-        //Enable normal
-        var nPos = gl.getAttribLocation(gl.program,"normal");
-        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW); 
-        gl.enableVertexAttribArray(nPos);
+        //create colorbuffer
+        gl.deleteBuffer(gl.bufferc);
+        gl.bufferc = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.bufferc);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(vertexColors), gl.STATIC_DRAW);
         
-
-
-        
+        //Enable colors
+        var vCol = gl.getAttribLocation( gl.program, "v_Color" );
+        gl.vertexAttribPointer( vCol, 4, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray(vCol);  
     }
     
-    //Location lock for lighting
+    //Location lock for lighting (In this only diffuse is used)
     gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
     gl.uniform4fv( gl.getUniformLocation(gl.program, "lightPosition"), flatten(lightPosition) );
     gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess );
 
-
+    //Create normal buffer
+    gl.deleteBuffer(gl.nbuffer);
+    gl.nbuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
+        
+    //Enable normal
+    var nPos = gl.getAttribLocation(gl.program,"normal");
+    gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
+    gl.enableVertexAttribArray(nPos);
 
 
     //Prespective matrix
     var P = perspective(45,canvas.width/canvas.height,0.1,20.0);
     var ploc = gl.getUniformLocation(gl.program,"projectionMatrix");
     gl.uniformMatrix4fv(ploc,false,flatten(P));
-    
-    var image = document.createElement("img");
-	image.crossorigin = "anonymous";
-	image.onload = function () {
-		// Insert WebGL texture initialization here
-		var texture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		gl.uniform1i(gl.getUniformLocation(program, "u_TexMap"), 0);
 
-		// gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-
-		gl.generateMipmap(gl.TEXTURE_2D);
-		// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-
-		imageLoaded = true;
-	};
-	image.src = "earth.jpg";
-    // Load planet-earth-map image: 
-    const texURL = "Assets/earth.jpg";
-    loadTexture(gl, texURL);
 
     //Camera postion
     var theta = 0;
@@ -195,16 +183,11 @@ window.onload = function init(){
 
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
-    var ambientSlider = document.getElementById("AmbientSlider");
-    var diffuseSlider = document.getElementById("DiffuseSlider");
-    var SpecularSlider = document.getElementById("SpecularSlider");
-    var ShinySlider = document.getElementById("ShinySlider");
-    var LightEmission = document.getElementById("LightEmission");
     
     increaseButton.addEventListener("click",function(ev){
         numberSubdiv ++;
         pointsArray = [];
-        normalsArray= [];
+        vertexColors = [];
         index = 0;
     });
 
@@ -213,53 +196,11 @@ window.onload = function init(){
             numberSubdiv --;
         }
         pointsArray = [];
-        normalsArray= [];
+        vertexColors = [];
         index = 0;
         
     });
     
-    
-    ambientSlider.addEventListener("input",function(ev){
-        var a = ambientSlider.value;
-        materialAmbient = vec4(a,a,a,1.0); 
-        ambientProduct = mult(lightAmbient,materialAmbient);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
-    });
-    diffuseSlider.addEventListener("input",function(ev){
-        var a = diffuseSlider.value;
-        //Set green to zero
-        materialDiffuse = vec4(a,a,a,1.0); 
-        diffuseProduct = mult(lightDiffuse,materialDiffuse);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
-    });
-    SpecularSlider.addEventListener("input",function(ev){
-        var a = SpecularSlider.value;
-        materialSpecular = vec4(a,a,a,1.0); 
-        specularProduct = mult(lightSpecular,materialSpecular);
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
-    });
-
-    ShinySlider.addEventListener("input",function(ev){
-        var a = ShinySlider.value;
-        materialShininess = a;
-        gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess);
-    });
-    LightEmission.addEventListener("input",function(ev){
-        var a = LightEmission.value;
-        
-        lightAmbient = vec4(a,a,a,1.0);
-        lightDiffuse = vec4(a,a,a,1.0);
-        lightSpecular = vec4(a,a,a,1.0); 
-        ambientProduct = mult(lightAmbient,materialAmbient);
-        diffuseProduct = mult(lightDiffuse,materialDiffuse);
-        specularProduct = mult(lightSpecular,materialSpecular);
-
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
-        gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
-    });
-    
-
 
     /*
         var I = mat4(); // identity matrix
@@ -271,9 +212,8 @@ window.onload = function init(){
         var T = translate(t_x, t_y, t_z);
         var c = mult(a, b); // c = a*b
     */
-   
 
-    var spin = 0.0;
+    var spin = 0.5;
     function tick(){
         M=mult(M,rotateX(spin));
         M=mult(M,rotateY(spin));
@@ -283,14 +223,8 @@ window.onload = function init(){
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         initTetrahedron(gl,numberSubdiv);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
-        gl.uniform3fv( gl.getUniformLocation(gl.program, "eyepos"), flatten(eye));
         V= lookAt(eye,look,up);
-        
-        var N = normalMatrix(M, false);
-		var uNMatrix = gl.getUniformLocation(program, "u_NMatrix");
-		gl.uniformMatrix3fv(uNMatrix, false, flatten(N));
-        
-        render(gl);     
+        render(gl); 
         requestAnimationFrame(tick);
     }
     tick();
