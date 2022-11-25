@@ -12,6 +12,9 @@ void main() {
     vec3 EE=normalize(E);
     vec3 NN=normalize(N);
     vec3 H = normalize(LL+EE);
+    
+    vec4 texColor = texture2D(texMap, vec2(1.0 - atan(fTexNormal.z, fTexNormal.x)/(2.0*PI), acos(fTexNormal.y)/PI));
+    vec4 n = normalize(fTexNormal);
 
 
     vec4 ambient = ambientProduct;
@@ -24,10 +27,9 @@ void main() {
     if (dot(LL, NN) < 0.0) {
     specular = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    vec3 texN = normalize(fTexNormal.xyz);
-    vec2 fTexCoord = vec2(1.0 - atan(texN.z,texN.x)/(2.0*PI), acos(texN.y) / PI);  
+    
 
-    fColor = ambient + diffuse + specular + texture2D(texMap, fTexCoord);
+    fColor = ambient + texColor*diffuse + specular;
     fColor.a = 1.0;
     gl_FragColor = fColor;
 

@@ -16,7 +16,7 @@ var colors=[
 window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
     var numberSubdiv=4;
-
+    var normalsArray = [];
 
     gl = WebGLUtils.setupWebGL(canvas);
     
@@ -35,26 +35,7 @@ window.onload = function init(){
     var vc = vec4(-0.816497, -0.471405, -0.333333, 1);
     var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 
-    var normalsArray = [];
-    var lightPosition;
-    var lightAmbient = vec4(0.25, 0.25, 0.25, 1.0 );
-    var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-    var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 ); 
-
-
-    //Set to 0.0 for a directional source light
-    lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
-    
-
-    var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
-    var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-    var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-    var materialShininess = 150.0;
-
-    //Products
-    var ambientProduct = mult(lightAmbient,materialAmbient);
-    var diffuseProduct = mult(lightDiffuse,materialDiffuse);
-    var specularProduct = mult(lightSpecular,materialSpecular);
+ 
     
     
 
@@ -99,7 +80,7 @@ window.onload = function init(){
 
     
     //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw6p3.glsl", "Shaders/fshaderw6p3.glsl");
+    gl.program = initShaders(gl, "Shaders/vshaderw7p1.glsl", "Shaders/fshaderw7p1.glsl");
     gl.useProgram(gl.program);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
@@ -138,12 +119,7 @@ window.onload = function init(){
         
     }
     
-    //Location lock for lighting
-    gl.uniform4fv( gl.getUniformLocation(gl.program, "ambientProduct"), flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(gl.program, "diffuseProduct"), flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(gl.program, "specularProduct"), flatten(specularProduct) );
-    gl.uniform4fv( gl.getUniformLocation(gl.program, "lightPosition"), flatten(lightPosition) );
-    gl.uniform1f( gl.getUniformLocation(gl.program, "shininess"), materialShininess );
+
 
 
 
@@ -153,14 +129,36 @@ window.onload = function init(){
     var ploc = gl.getUniformLocation(gl.program,"projectionMatrix");
     gl.uniformMatrix4fv(ploc,false,flatten(P));
     
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D,texture);
-    var image = new Image();
-    image.onload = function(){
-        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image);
-        gl.generateMipmap(gl.TEXTURE_2D);
+    var g_tex_ready = 0;
+    function initTexture() {
+        var cubemap = ['../Models/start_cubemap/cm_left.png',   // POSITIVE_X
+                       '../Models/start_cubemap/cm_right.png',  // NEGATIVE_X
+                       '../Models/start_cubemap/cm_top.png',    // POSITIVE_Y
+                       '../Models/start_cubemap/cm_bottom.png', // NEGATIVE_Y
+                       '../Models/start_cubemap/cm_back.png',   // POSITIVE_Z
+                       '../Models/start_cubemap/cm_front.png']; // NEGATIVE_Z
+
+        gl.activeTexture(gl.TEXTURE0);
+        var texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        for(var i = 0; i < 6; ++i) {
+            var image = document.createElement('img');
+            image.crossorigin = 'anonymous';
+            image.textarget = gl.TEXTURE_CUBE_MAP_POSITIVE_X + i;
+            image.onload = function(event) {
+                var image = event.target;
+                gl.activeTexture(gl.TEXTURE0);
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                gl.texImage2D(image.textarget, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+                ++g_tex_ready;
+            };
+            image.src = cubemap[i];
+        }
+        gl.uniform1i(gl.getUniformLocation(gl.program, "texCubeMap"), 0);
     }
-    image.src ="../Models/earth.jpg";
+    initTexture();
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
