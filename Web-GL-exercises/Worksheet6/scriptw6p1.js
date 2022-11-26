@@ -151,7 +151,7 @@ window.onload = function init(){
         M=mult(M,rotateX(spin));
         M=mult(M,rotateY(spin));
         M=mult(M,rotateZ(spin));
-        theta+=0.01;
+        theta+=0.00;
         gl.uniformMatrix4fv(mloc,false,flatten(M));
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
