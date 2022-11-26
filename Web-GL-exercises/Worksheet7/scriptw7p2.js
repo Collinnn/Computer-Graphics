@@ -1,6 +1,6 @@
 var gl;
-var index = 0;
-var pointsArray =[];
+
+
 var colors=[
     vec4(0.0,0.0,0.0,1.0), // Black
     vec4(1.0,0.0,0.0,1.0), // Red
@@ -16,7 +16,8 @@ var colors=[
 window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
     var numberSubdiv=4;
-    var normalsArray = [];
+    var normalsArray;
+    var pointsArray;
 
     gl = WebGLUtils.setupWebGL(canvas);
     
@@ -24,10 +25,20 @@ window.onload = function init(){
         alert("Not supported");
         return;
     }
+    //Canvas setup
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(colors[8][0],colors[8][1],colors[8][2],colors[8][3]);
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.vBuffer = null;
-    gl.bufferc = null;
-    gl.nbuffer = null;
+    
+
+    //import shaders
+    var program = initShaders(gl, "Shaders/vshaderw7p2.glsl", "Shaders/fshaderw7p2.glsl");
+    gl.useProgram(program);
+    
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+
 
     //Tetrahedron
     var va = vec4(0.0, 0.0, 1.0, 1);
@@ -36,13 +47,13 @@ window.onload = function init(){
     var vd = vec4(0.816497, -0.471405, -0.333333, 1);
 
     var background = [vec4(1, 1, 0.999, 1),
-        vec4(-1, 1, 0.999, 1),
-        vec4(-1, -1, 0.999, 1),
-        vec4(1, -1, 0.999, 1)];    
+                     vec4(-1, 1, 0.999, 1),
+                    vec4(-1, -1, 0.999, 1),
+                    vec4(1, -1, 0.999, 1)];
 
 
 
-
+ 
 
     function triangle(a,b,c){
         normalsArray.push(vec4(a[0],a[1],a[2],0));
@@ -51,7 +62,7 @@ window.onload = function init(){
         pointsArray.push(a);
         pointsArray.push(b);
         pointsArray.push(c);
-        index +=3; 
+
     }
     function divideTriangle(a,b,c,count){
         if(count >0){
@@ -73,64 +84,10 @@ window.onload = function init(){
         divideTriangle(a,c,d,n);
 
     }
-    
-    //Canvas setup
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(colors[8][0],colors[8][1],colors[8][2],colors[8][3]);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    
-    //import shaders
-    gl.program = initShaders(gl, "Shaders/vshaderw7p2.glsl", "Shaders/fshaderw7p2.glsl");
-    gl.useProgram(gl.program);
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-    
-
-
-    function initTetrahedron(gl,numberSubdiv){
-
+    function initTetrahedron(numberSubdiv){
         tretrahedron(va,vb,vc,vd,numberSubdiv);
-
-        //create vertex buffer
-        gl.deleteBuffer(gl.vBuffer);
-        gl.vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.vBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-
-        //Enable vertex
-        var vPos = gl.getAttribLocation(gl.program, "v_Position");
-        gl.vertexAttribPointer( vPos, 4, gl.FLOAT, false, 0, 0 );
-        gl.enableVertexAttribArray(vPos);
-
-        //Create normal buffer
-        gl.deleteBuffer(gl.nbuffer);
-        gl.nbuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER,gl.nbuffer);
-        gl.bufferData(gl.ARRAY_BUFFER,flatten(normalsArray),gl.STATIC_DRAW);
-        
-        //Enable normal
-        var nPos = gl.getAttribLocation(gl.program,"normal");
-        gl.vertexAttribPointer(nPos,4,gl.FLOAT,false,0,0);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW); 
-        gl.enableVertexAttribArray(nPos);       
     }
     
-
-
-
-
-
-    //Prespective matrix
-    var P = perspective(45,canvas.width/canvas.height,0.1,20.0);
-    var ploc = gl.getUniformLocation(gl.program,"projectionMatrix");
-    gl.uniformMatrix4fv(ploc,false,flatten(P));
-    
-    // Background buffer
-    var bgBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bgBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
-
     var g_tex_ready = 0;
     function initTexture() {
         var cubemap = ['../Models/start_cubemap/cm_left.png',   // POSITIVE_X
@@ -158,111 +115,142 @@ window.onload = function init(){
             };
             image.src = cubemap[i];
         }
-        gl.uniform1i(gl.getUniformLocation(gl.program, "texCubeMap"), 0);
+        gl.uniform1i(gl.getUniformLocation(program, "texCubeMap"), 0);
     }
     initTexture();
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    var tMLoc = gl.getUniformLocation(gl.program, "texMatrix");
+    
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    
+    
+    //create vertex buffer
+    
+
+    var vbuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
+
+    //Enable vertex
+    var vPos = gl.getAttribLocation(program, "v_Position");
+    gl.vertexAttribPointer( vPos, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray(vPos);
+    
+
+    // Background buffer
+    var bgBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bgBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
+    
+
+    //Create normal buffer
+    // Normal buffer
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+    var normLoc = gl.getAttribLocation(program, "normal");
+    gl.vertexAttribPointer(normLoc, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(normLoc);
+    
+
+
+    //Prespective matrix
+    var P = perspective(90,canvas.width/canvas.height,0.1,1000);
+    var ploc = gl.getUniformLocation(program,"projectionMatrix");
+    //gl.uniformMatrix4fv(ploc,false,flatten(P));
+    
+
 
     //Camera postion
     var theta = 0;
     var radius = 3;
-    eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
-    look = vec3(0,0,0);
-    up = vec3(0,1,0);
-    var V= lookAt(eye,look,up);
+    var Rx = rotateX(theta);
+    var Ry = rotateY(theta);
+    var Rz = rotateZ(theta);
+    // Rotation matrix
+    var R = mat4();
+    R = mult(R, Rx);
+    R = mult(R, Ry);
+    R = mult(R, Rz);
 
-    var vloc= gl.getUniformLocation(gl.program, "viewMatrix");
-    
-    
+    // Translation matrix
+    var T = translate(0, 0, radius);
+    // Model matrix
+    var M = mat4();
+    //M = mult(M, T);
+    //M = mult(M, R);
 
     //Model Matrix
-    var mloc =gl.getUniformLocation(gl.program,"modelMatrix");
+    var mloc =gl.getUniformLocation(program,"modelMatrix");
+ 
+    var eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
+    var look = vec3(0,0,0);
+    var up = vec3(0,1,0);
+    var V= lookAt(eye,look,up);
 
-    //Moves the camera back to get a proper view.
-    M =mat4();
-
+    var vloc= gl.getUniformLocation(program, "viewMatrix");
+    var tMLoc = gl.getUniformLocation(program, "texMatrix");
 
     var increaseButton = document.getElementById("IncreaseDepth");
     var decreaseButton = document.getElementById("DecreaseDepth");
 
-    
     increaseButton.addEventListener("click",function(ev){
         numberSubdiv ++;
-        pointsArray = [];
-        normalsArray= [];
-        index = 0;
+
     });
 
     decreaseButton.addEventListener("click",function(ev){
         if(numberSubdiv != 0){
             numberSubdiv --;
         }
-        pointsArray = [];
-        normalsArray= [];
-        index = 0;
-        
+
+
     });
-    
 
-
-
-    /*
-        var I = mat4(); // identity matrix
-        var R = rotate(angle, direction);
-        var Rx = rotateX(angle);
-        var Ry = rotateY(angle);
-        var Rz = rotateZ(angle);
-        var S = scalem(s_x, s_y, s_z);
-        var T = translate(t_x, t_y, t_z);
-        var c = mult(a, b); // c = a*b
-    */
-   
-
-    var spin = 0.0;
     function tick(){
         pointsArray = new Array();
         normalsArray = new Array();
-
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        initTetrahedron(numberSubdiv);
         theta+=0.01;
-        gl.uniformMatrix4fv(mloc,false,flatten(M));
-        gl.uniformMatrix4fv(vloc, false, flatten(V));
-        initTetrahedron(gl,numberSubdiv);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
-        gl.uniform3fv( gl.getUniformLocation(gl.program, "eyepos"), flatten(eye));
-        V= lookAt(eye,look,up);
+        V = lookAt(eye, look, up);
+        gl.uniformMatrix4fv(vloc, false, flatten(V));
+        gl.uniformMatrix4fv(mloc, false, flatten(M));
+        gl.uniformMatrix4fv(ploc, false, flatten(P));
+        // M_tex is identity for the sphere
         gl.uniformMatrix4fv(tMLoc, false, flatten(mat4()));
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.vBuffer);
+        
+        // Magnification and magnification filtering
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        
+        // Vertices (sphere)
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.nBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLES, 0, pointsArray.length);
 
-        Mtex = mat4();
-        Vinv = inverse(V);
+        // Calculate M_tex for the background
+        gl.uniformMatrix4fv(vloc, false, flatten(mat4()));
+        gl.uniformMatrix4fv(mloc, false, flatten(mat4()));
+        gl.uniformMatrix4fv(ploc, false, flatten(mat4()));
+        Mat4tex = mat4();
+            Vinv = inverse(V);
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
-                Mtex[i][j] = Vinv[i][j];
+                Mat4tex[i][j] = Vinv[i][j];
             }        
         }
-        Mtex = mult(Mtex, inverse(P));
-        gl.uniformMatrix4fv(tMLoc, false, flatten(Mtex));
-        // Vertices for the background
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.vBuffer);
+        Mat4tex = mult(Mat4tex, inverse(P));
+        gl.uniformMatrix4fv(tMLoc, false, flatten(Mat4tex));
+
+        // Vertices (background)
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, background.length);
 
-        render(gl);     
         requestAnimationFrame(tick);
     }
     tick();
 }
 
-function render(gl)
-{
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES,0,index);
 
-}

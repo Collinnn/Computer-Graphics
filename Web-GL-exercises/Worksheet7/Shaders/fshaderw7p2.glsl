@@ -1,14 +1,15 @@
 precision mediump float;
 uniform samplerCube texCubeMap;
 
-varying vec4 fTexNormal;
 uniform mat4 texMatrix;
-#define PI 3.1415926538
+varying vec4 fPosition;
+varying vec4 fTexNormal;
+
 
 void main() {
 
     
-    vec4 texColor = textureCube(texCubeMap, (texMatrix * fTexNormal).xyz);
+    vec4 texColor = textureCube(texCubeMap, (texMatrix * fPosition).xyz);
     texColor.a=1.0;
 
     gl_FragColor = texColor;
