@@ -154,7 +154,7 @@ window.onload = function init(){
 
     //Camera postion
     var theta = 0;
-    var radius = 3;
+    var radius = 2;
 
 
     // Model matrix 
