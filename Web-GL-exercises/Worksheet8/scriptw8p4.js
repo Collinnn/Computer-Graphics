@@ -20,7 +20,7 @@ window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
 
     gl = WebGLUtils.setupWebGL(canvas);
-    var gl = WebGLUtils.setupWebGL(canvas, { alpha: false });
+    gl = WebGLUtils.setupWebGL(canvas, { alpha: false });
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
