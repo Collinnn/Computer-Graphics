@@ -20,18 +20,22 @@ window.onload = function init(){
     const canvas = document.querySelector("#gl-canvas");
 
     gl = WebGLUtils.setupWebGL(canvas);
-    gl = WebGLUtils.setupWebGL(canvas, { alpha: false });
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
+    
     var index_unit = gl.getExtension('OES_element_index_uint');
     if (!index_unit) {
         console.log('Unable to use an extension for OES');
     }
     
     //import shaders
-    var program = initShaders(gl, "Shaders/vshaderw8p4.glsl", "Shaders/fshaderw8p4.glsl");
-    gl.useProgram(program);
+    var program_surface = initShaders(gl, "Shaders/vshadersurfacew9p1.glsl", "Shaders/fshadersurfacew9p1.glsl");
+    program_surface.v_Position = gl.getAttribLocation(program_surface, 'v_Position');
+    program_surface.v_TexCord = gl.getAttribLocation(program_surface, 'v_TexCord');
+
+    var program_object = initShaders(gl,"Shaders/vshaderobjectw9p1.glsl", "Shaders/fshaderobjectw9p1.glsl");
+    program_object.v_Position = gl.getAttribLocation(program_object,'v_Position');
+    program_object.normal = gl.getAttribLocation(program_object,'normal');
+    program_object.v_Color = gl.getAttribLocation(program_object,'v_Color');
+    gl.useProgram(program_surface);
     gl.enable(gl.DEPTH_TEST);
     //gl.enable(gl.CULL_FACE);
     gl.depthFunc(gl.LESS);
@@ -43,6 +47,29 @@ window.onload = function init(){
     gl.clear(gl.COLOR_BUFFER_BIT);
     
     
+    //W5p3/////////////
+    var lightPosition;
+    var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+    var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 ); 
+
+
+    //Set to 0.0 for a directional source light
+    lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
+    
+
+    var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+    var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+    var materialShininess = 20.0;
+
+    //Products
+    var ambientProduct = mult(lightAmbient,materialAmbient);
+    var diffuseProduct = mult(lightDiffuse,materialDiffuse);
+    var specularProduct = mult(lightSpecular,materialSpecular);
+    /////////////
+
+
     if(gl == null){
         alert("Not supported");
         return;
@@ -80,7 +107,7 @@ window.onload = function init(){
 
     var vBuffer= gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer);
-    var vPos = gl.getAttribLocation(program,"v_Position");
+    var vPos = gl.getAttribLocation(program_surface,"v_Position");
     gl.vertexAttribPointer(vPos,4,gl.FLOAT,false,0,0);
     gl.enableVertexAttribArray(vPos);
     gl.bufferData(gl.ARRAY_BUFFER,flatten(vertices),gl.STATIC_DRAW);
@@ -88,11 +115,11 @@ window.onload = function init(){
     // Texture buffer
     var tBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
-    gl.vertexAttribPointer(gl.getAttribLocation(program, 'v_TexCord'), 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(gl.getAttribLocation(program, 'v_TexCord'));
+    gl.vertexAttribPointer(gl.getAttribLocation(program_surface, 'v_TexCord'), 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(gl.getAttribLocation(program_surface, 'v_TexCord'));
     gl.bufferData(gl.ARRAY_BUFFER, flatten(texCord), gl.STATIC_DRAW);
 
-    var tMLoc = gl.getUniformLocation(program, "texMap");
+    var tMLoc = gl.getUniformLocation(program_surface, "texMap");
 
     var tex_plane = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
@@ -112,12 +139,67 @@ window.onload = function init(){
     gl.bindTexture(gl.TEXTURE_2D,red_tex);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,1,1,0,gl.RGB,gl.UNSIGNED_BYTE,new Uint8Array([255,0,0]));
 
+    function initObject(gl, obj_filename, scale)
+    {
+        program_object.v_Position = gl.getAttribLocation(program_object, 'v_Position');
+        program_object.normal = gl.getAttribLocation(program_object, 'normal');
+        program_object.v_Color = gl.getAttribLocation(program_object, 'v_Color');
+        // Prepare empty buffer objects for vertex coordinates, colors, and normals
+        var model = initVertexBuffers(gl);
+        // Start reading the OBJ file
+        readOBJFile(obj_filename, gl, model, scale, true);
+        return model;
+    }
+        // Create a buffer object and perform the initial configuration
+        function initVertexBuffers(gl) { 
+            var o = new Object();
+            o.vertexBuffer = createEmptyArrayBuffer(gl,program_object.v_Position,3,gl.FLOAT);
+            o.normalBuffer = createEmptyArrayBuffer(gl,program_object.normal,3,gl.FLOAT);
+            o.colorBuffer = createEmptyArrayBuffer(gl,program_object.v_Color,4,gl.FLOAT);
+            o.indexBuffer = gl.createBuffer();
+            return o;
+        }
+        
+        function createEmptyArrayBuffer(gl, a_attribute, num, type) { 
+            var buffer = gl.createBuffer(); // Create a buffer object
+            gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+            gl.vertexAttribPointer(a_attribute,num,type,false,0,0);
+            gl.enableVertexAttribArray(a_attribute);
+            return buffer;
+        }
+        // Asynchronous file loading (request, parse, send to GPU buffers)
+        function readOBJFile(fileName, gl, model, scale, reverse) { 
+            var request = new XMLHttpRequest();
 
+            request.onreadystatechange= function(){
+                if(request.readyState===4 && request.status !==404){
+                    onReadOBJFile(request.responseText,fileName,gl,model,scale,reverse);
+                }
+            }
+            request.open('GET',fileName,true); //Create request
+            request.send();
+        }
+
+
+        function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) { 
+            var objDoc = new OBJDoc(fileName);
+            var result = objDoc.parse(fileString,scale,reverse);
+            if(!result){
+                g_objDoc = null; 
+                g_drawingInfo = null;
+                console.log("OBJ file has a passing error");
+                return;
+            }
+            g_objDoc=objDoc;
+
+        }
+
+        var model = initObject(gl,"../Models/teapot.obj",1);
 
 
     //Prespective matrix
     var P = perspective(90,canvas.width/canvas.height,0.1,100.0);
-    var ploc = gl.getUniformLocation(program,"projectionMatrix");
+    var ploc = gl.getUniformLocation(program_surface,"projectionMatrix");
     gl.uniformMatrix4fv(ploc,false,flatten(P));
 
 
@@ -129,24 +211,22 @@ window.onload = function init(){
     up = vec3(0,1,0);
     var V= lookAt(eye,look,up);
 
-    var vloc= gl.getUniformLocation(program, "viewMatrix");
+    var vloc= gl.getUniformLocation(program_surface, "viewMatrix");
     
     // Center of the light and the radius for the rotation
     lightRadius = 2;
     lightCenter = vec3(0, 2, -2);
     
 
-    var shadowMLoc = gl.getUniformLocation(program,"shadowMatrix");
-    var shadowLoc = gl.getUniformLocation(program,"shadow");
+    var shadowMLoc = gl.getUniformLocation(program_surface,"shadowMatrix");
+    var shadowLoc = gl.getUniformLocation(program_surface,"shadow");
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
+    
 
 
 
     //Model Matrix
-    var mloc =gl.getUniformLocation(program,"modelMatrix");
+    var mloc =gl.getUniformLocation(program_surface,"modelMatrix");
 
     //Moves the camera back to get a proper view.
     M =mat4();
@@ -190,7 +270,8 @@ window.onload = function init(){
         gl.uniform1i(tMLoc, 0);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(Plane), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, Plane.length);
-        
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
        
         //Shadows
@@ -210,9 +291,40 @@ window.onload = function init(){
         gl.drawArrays(gl.TRIANGLE_FAN,0,Vertical.length,gl.STATIC_DRAW);
         gl.bufferData(gl.ARRAY_BUFFER,flatten(Horizontal),gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN,0,Horizontal.length,gl.STATIC_DRAW);
-
+        
+        //Object
+        if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) {
+            // OBJ and all MTLs are available
+            g_drawingInfo = onReadComplete(gl, model, g_objDoc);
+            console.log("Model has been loaded");
+            }
+        if (!g_drawingInfo){
+            return;
+        }
+    
+        gl.drawElements(gl.TRIANGLES,g_drawingInfo.indices.length,gl.UNSIGNED_SHORT,0);
+    
         requestAnimationFrame(tick);
     }
     tick();
 }
 
+function onReadComplete(gl, model, objDoc) { 
+    var drawingInfo = objDoc.getDrawingInfo();
+    
+    //write into buffer object
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.vertices,gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,model.colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,drawingInfo.colors,gl.STATIC_DRAW);
+
+    //writes the indices to the buffer object
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,model.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,drawingInfo.indices,gl.STATIC_DRAW );
+
+    return drawingInfo;
+}

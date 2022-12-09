@@ -178,8 +178,6 @@ window.onload = function init(){
         gl.uniformMatrix4fv(shadowMLoc, false, flatten(matrixShadow));
 
 
-
-        
         gl.uniform1i(shadowLoc, false);
         gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer);
         gl.uniform1i(tMLoc, 0);
