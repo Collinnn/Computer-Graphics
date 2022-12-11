@@ -301,7 +301,7 @@ window.onload = function init(){
         
         
         var matrixLight = mat4();
-        lightPos = vec3(lightCenter[0]+lightRadius*Math.cos(theta),lightCenter[1],lightCenter[2]+ lightRadius*Math.sin(theta));
+        lightPos = vec3(lightCenter[0]+lightRadius*Math.sin(theta),lightCenter[1],lightCenter[2]+ lightRadius*Math.cos(theta));
         theta += 0.01;    
         // Projection matrix to ground plane
         var diff= -(lightPos[1]+1);

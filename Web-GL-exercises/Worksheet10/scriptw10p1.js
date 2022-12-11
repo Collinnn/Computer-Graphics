@@ -198,6 +198,37 @@ window.onload = function init(){
 
 
     });
+
+    var mousepressed = false; 
+    var x0 = -1, y0 = -1 ;
+    var rotationX = 0, rotationY = 0;
+    canvas.onmousedown = function(ev){
+        x=ev.clientX;
+        y=ev.clientY;
+        var rect = ev.target.getBoundingClientRect();
+        //stops
+        if(rect.left <=x && x<rect.right && rect.top <= y && y<rect.bottom){
+            x0=x;
+            y0=y;
+            mousepressed = true;
+        }
+    }
+    canvas.onmouseup = function(ev){
+        mousepressed=false;
+    }
+
+    canvas.onmousemove = function(ev){
+        x=ev.clientX;
+        y=ev.clientY;
+        if(mousepressed){
+            scale = 0.2;
+            rotationX += scale * (x-x0);
+            rotationY += scale * (y-y0);
+        }
+        x0 = x;
+        y0 = y;
+    }
+
     
     function tick(){
         pointsArray = new Array();
@@ -205,7 +236,7 @@ window.onload = function init(){
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         initTetrahedron(numberSubdiv);
-        theta+=0.01;
+        
         gl.uniform4f(eLoc, eye[0], eye[1], eye[2], 1.0);
         eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
     
