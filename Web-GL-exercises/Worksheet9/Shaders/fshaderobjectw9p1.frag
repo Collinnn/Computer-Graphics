@@ -13,7 +13,8 @@ void main() {
     vec3 LL=normalize(L);
     vec3 EE=normalize(E);
     vec3 NN=normalize(N);
-    vec3 H = normalize(LL+EE);
+    vec3 H =normalize(LL+EE);
+    NN[0] = -NN[0];
 
     vec4 ambient = ambientProduct;
     float Kd = max(dot(LL,NN),0.0);

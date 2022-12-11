@@ -16,7 +16,7 @@ var colors=[
 ]
 
 window.onload = function init(){
-
+    let move=true;
     var canvas = document.querySelector("#gl-canvas");
     
     var gl = WebGLUtils.setupWebGL(canvas);
@@ -29,8 +29,6 @@ window.onload = function init(){
     gl.clearColor(colors[8][0],colors[8][1],colors[8][2],colors[8][3]);
     gl.clear(gl.COLOR_BUFFER_BIT);
       
-
-
 
     var program_surface = initShaders(gl, "Shaders/vshadersurfacew9p1.vert", "Shaders/fshadersurfacew9p1.frag");
     var program_object = initShaders(gl,"Shaders/vshaderobjectw9p1.vert", "Shaders/fshaderobjectw9p1.frag");
@@ -65,7 +63,7 @@ window.onload = function init(){
 
 
     //Set to 0.0 for a directional source light
-    lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
+    //lightPosition = vec4(0.0, 0.0, -1.0, 0.0 );
     
 
     var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -90,7 +88,7 @@ window.onload = function init(){
     model.colorBuffer.type = gl.FLOAT;
 
 
-    var vertices = [];
+
     var Plane = [
         vec4(-2, -1, -1, 1.0), 
         vec4(2, -1, -1, 1.0), 
@@ -152,7 +150,7 @@ window.onload = function init(){
     // Center of the light and the radius for the rotation
     lightRadius = 2;
     lightCenter = vec3(0, 2, -2);
-
+    
 
 
 
@@ -182,7 +180,6 @@ window.onload = function init(){
     up = vec3(0,1,0);
     var V= lookAt(eye,look,up);
 
-    var M_object = mult(mat4(),translate(0,-1,3));
 
     var vloc_surface= gl.getUniformLocation(program_surface, "viewMatrix");
     gl.uniformMatrix4fv(vloc_surface, false, flatten(V));
@@ -218,7 +215,7 @@ window.onload = function init(){
     gl.uniform4fv( gl.getUniformLocation(program_object, "ambientProduct"), flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(program_object, "diffuseProduct"), flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(program_object, "specularProduct"), flatten(specularProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program_object, "lightPosition"), flatten(lightPosition) );
+    
     gl.uniform1f( gl.getUniformLocation(program_object, "shininess"), materialShininess );
 
     var ambientSlider = document.getElementById("AmbientSlider");
@@ -266,8 +263,13 @@ window.onload = function init(){
         gl.uniform4fv( gl.getUniformLocation(program_object, "diffuseProduct"), flatten(diffuseProduct) );
         gl.uniform4fv( gl.getUniformLocation(program_object, "specularProduct"), flatten(specularProduct) );
     });   
+    var bounceButton = document.getElementById("moveButton");
+    bounceButton.addEventListener("click", function (event) {
+        console.log("move");
+        move = !move;
+    });
 
-   
+    var theta2=0;
     function tick() {
         requestAnimationFrame(tick);
         
@@ -296,28 +298,36 @@ window.onload = function init(){
         
         gl.useProgram(program_object);
         
-        if (true) {
-            theta += 0.01;
-            var matrixLight = mat4();
-            lightPos = vec3(lightCenter[0] + lightRadius*Math.cos(theta), lightCenter[1], lightCenter[2] + lightRadius*Math.sin(theta));
-            // Projection matrix to ground plane
-            var diff= -(lightPos[1]+1);
-            matrixLight[3][3] = -0.0001;//Moves it a tiny bit up so no clipping occurs
-            matrixLight[3][1] = 1/diff;
-            matrixShadow = translate(lightPos[0], lightPos[1], lightPos[2]);  
-            matrixShadow = mult(matrixShadow, matrixLight);
-            matrixShadow = mult(matrixShadow, translate(-lightPos[0], -lightPos[1], -lightPos[2]) );
-            matrixShadow = mult(matrixShadow,M); 
-            gl.uniformMatrix4fv(shadowMLoc, false, flatten(matrixShadow));
+        
+        
+        var matrixLight = mat4();
+        lightPos = vec3(lightCenter[0]+lightRadius*Math.cos(theta),lightCenter[1],lightCenter[2]+ lightRadius*Math.sin(theta));
+        theta += 0.01;    
+        // Projection matrix to ground plane
+        var diff= -(lightPos[1]+1);
+        matrixLight[3][3] = -0.0001;//Moves it a tiny bit up so no clipping occurs
+        matrixLight[3][1] = 1/diff;
+        matrixShadow = translate(lightPos[0], lightPos[1], lightPos[2]);  
+        matrixShadow = mult(matrixShadow, matrixLight);
+        matrixShadow = mult(matrixShadow, translate(-lightPos[0], -lightPos[1], -lightPos[2]) );
+        matrixShadow = mult(matrixShadow,M); 
+        gl.uniformMatrix4fv(shadowMLoc, false, flatten(matrixShadow));
+        
+      
+        
+        
+        if(move){
+            theta2 +=0.01;
+            var T = translate(0, Math.sin(theta2), -3); 
+            m_object = mult(mat4(),T);
         }
-        //M_object = mat4();
-       
-        //gl.uniformMatrix4fv(mloc_object, false, flatten(m_object));
-       
+
+
+        gl.uniformMatrix4fv(mloc_object, false, flatten(m_object));
         initAttributeVariable(gl,program_object.v_Position, model.vertexBuffer);
         initAttributeVariable(gl,program_object.normal, model.normalBuffer);
         initAttributeVariable(gl,program_object.v_Color, model.colorBuffer);
-
+        gl.uniform4fv(gl.getUniformLocation(program_object, "lightPosition"), flatten(vec4(lightPos[0],lightPos[1],lightPos[2],1.0)));
     
         
         // Draw shadows
@@ -367,9 +377,9 @@ function initAttributeVariable(gl, attribute, buffer) {
 // Create a buffer object and perform the initial configuration
 function initVertexBuffers(gl, program) {
     var model = new Object();
-    model.vertexBuffer = createEmptyArrayBuffer(gl, program.a_Position, 3, gl.FLOAT);
-    model.normalBuffer = createEmptyArrayBuffer(gl, program.a_Normal, 3, gl.FLOAT);
-    model.colorBuffer = createEmptyArrayBuffer(gl, program.a_Color, 4, gl.FLOAT);
+    model.vertexBuffer = createEmptyArrayBuffer(gl, program.v_Position, 3, gl.FLOAT);
+    model.normalBuffer = createEmptyArrayBuffer(gl, program.normal, 3, gl.FLOAT);
+    model.colorBuffer = createEmptyArrayBuffer(gl, program.v_Color, 4, gl.FLOAT);
     model.indexBuffer = gl.createBuffer();
     return model;
 }

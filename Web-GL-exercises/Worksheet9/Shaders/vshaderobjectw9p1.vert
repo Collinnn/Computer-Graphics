@@ -12,11 +12,14 @@ uniform bool shadow;
 varying vec4 fColor;
 
 void main() {
+
+    //Redo the lighting model to a fixed model
     if(shadow){
         gl_Position=projectionMatrix*viewMatrix*shadowMatrix*modelMatrix*v_Position;
     }else{
         vec3 pos = (modelMatrix*v_Position).xyz;
-        vec3 light = lightPosition.xyz;
+        vec3 light = (modelMatrix*lightPosition).xyz;
+        light[2] = light[2];
         L = lightPosition.w == 0.0 ? normalize(-light) : normalize(light - pos);
         E = normalize(eyepos-pos);
         N = normalize((modelMatrix*normal).xyz);
