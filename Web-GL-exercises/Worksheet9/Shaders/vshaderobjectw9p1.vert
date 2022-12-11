@@ -21,7 +21,7 @@ void main() {
         E = normalize(eyepos-pos);
         N = normalize((modelMatrix*normal).xyz);
         gl_Position  = projectionMatrix*viewMatrix*modelMatrix*v_Position;
-        fColor = v_Color;    
+        fColor = v_Color;
     }
 
 

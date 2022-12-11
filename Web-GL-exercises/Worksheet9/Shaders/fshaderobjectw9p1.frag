@@ -17,7 +17,7 @@ void main() {
 
     vec4 ambient = ambientProduct;
     float Kd = max(dot(LL,NN),0.0);
-    vec4 diffuse = Kd*diffuseProduct*(fColor);
+    vec4 diffuse = Kd*diffuseProduct;
     
     float Ks = pow(max(dot(NN, H), 0.0), shininess);
     vec4 specular = Ks * specularProduct;

@@ -28,7 +28,7 @@ window.onload = function init(){
    
     gl.clearColor(colors[8][0],colors[8][1],colors[8][2],colors[8][3]);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.viewport(0, 0, canvas.width, canvas.height);    
+      
 
 
 
@@ -78,8 +78,10 @@ window.onload = function init(){
     var diffuseProduct = mult(lightDiffuse,materialDiffuse);
     var specularProduct = mult(lightSpecular,materialSpecular);
     /////////////
+
+
     var model = initVertexBuffers(gl,program_object);
-    model =initObject("../Models/teapot.obj",0.25,program_object);
+    readOBJFile("../Models/teapot.obj",gl,model,0.25,true);
     model.vertexBuffer.num = 3;
     model.normalBuffer.num = 3;
     model.colorBuffer.num = 4;
@@ -95,35 +97,31 @@ window.onload = function init(){
         vec4(2, -1, -5, 1.0), 
         vec4(-2, -1, -5, 1.0)
     ];
+    gl.useProgram(program_surface);
 
+    //Vertex Buffer
+    var vBuffer_surface = gl.createBuffer();
+    vBuffer_surface.num = 4;
+    vBuffer_surface.type = gl.FLOAT;
+    initAttributeVariable(gl, program_surface.v_Position, vBuffer_surface);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(Plane), gl.STATIC_DRAW);
     
     //Create texture coord
     var texCord = [
         vec2(0.0,0.0),
-        vec2(0.0,1.0),
+        vec2(1.0,0.0),
         vec2(1.0,1.0),
-        vec2(1.0,0.0)
+        vec2(0.0,1.0)
     ];
-    gl.useProgram(program_surface);
 
-    //Vertex Buffer
-    var vBuffer_surface= gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer_surface);
-    gl.vertexAttribPointer(vBuffer_surface.v_Position,4,gl.FLOAT,false,0,0);
-    gl.enableVertexAttribArray(vBuffer_surface.v_Position);
-    
-    ///var vPos = gl.getAttribLocation(program_surface,"v_Position");
 
-    gl.bufferData(gl.ARRAY_BUFFER,flatten(vertices),gl.STATIC_DRAW);
 
     // Texture buffer
     var tBuffer = gl.createBuffer();
-
-    gl.bindBuffer(gl.ARRAY_BUFFER,tBuffer);
-    gl.vertexAttribPointer(tBuffer.v_TexCord,2,gl.FLOAT,false,0,0);
-    gl.enableVertexAttribArray(tBuffer.v_TexCord);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(texCord), gl.STATIC_DRAW);
-    /////////////////////////////////
+    tBuffer.num = 2;
+    tBuffer.type = gl.FLOAT;
+    initAttributeVariable(gl,program_surface.v_TexCord, tBuffer); //////////////////
+    gl.bufferData(gl.ARRAY_BUFFER,flatten(texCord),gl.STATIC_DRAW);
     var tMLoc = gl.getUniformLocation(program_surface, "texMap");
 
     var tex_plane = gl.createTexture();
@@ -162,7 +160,7 @@ window.onload = function init(){
     var vBuffer_surface = gl.createBuffer();
     vBuffer_surface.num = 4;
     vBuffer_surface.type = gl.FLOAT;
-    initAttributeVariable(program_surface.v_Position,vBuffer_surface);
+    initAttributeVariable(gl,program_surface.v_Position,vBuffer_surface);
     gl.bufferData(gl.ARRAY_BUFFER,flatten(Plane),gl.STATIC_DRAW); 
 
     //Prespective matrix
@@ -171,37 +169,40 @@ window.onload = function init(){
     gl.uniformMatrix4fv(ploc,false,flatten(P));
 
     //Model Matrix
-    var mloc_surface = gl.getUniformLocation(program_surface,"modelMatrix");
-
-    //Moves the camera back to get a proper view.
+    var mloc_surface = gl.getUniformLocation(program_surface,"modelMatrix")
     var M =mat4();
     gl.uniformMatrix4fv(mloc_surface,false,flatten(M));
+
+
     //Camera postion
     var theta = 0;
-    var radius = 0.4; // it is wrong when it spins. Spin spin wrong wrong.
+    var radius = 0.4;
     eye = vec3(radius * Math.sin(theta),0,radius * Math.cos(theta));
     look = vec3(0,0,0);
     up = vec3(0,1,0);
     var V= lookAt(eye,look,up);
 
-    var vloc= gl.getUniformLocation(program_surface, "viewMatrix");
-    var vloc_object= gl.getUniformLocation(program_object, "viewMatrix");
-    
-    
+    var M_object = mult(mat4(),translate(0,-1,3));
+
+    var vloc_surface= gl.getUniformLocation(program_surface, "viewMatrix");
+    gl.uniformMatrix4fv(vloc_surface, false, flatten(V));
     var translated = translate(0,-1,-3); 
     var m_object = mult(mat4(),translated);
+;
+
+
+  
 
     var shadowMLoc = gl.getUniformLocation(program_object,"shadowMatrix");
     var shadowLoc = gl.getUniformLocation(program_object,"shadow");
 
     gl.useProgram(program_object);
-    var mloc_object = gl.getUniformLocation(program_object,"modelMatrix");
-    gl.uniformMatrix4fv(mloc_object,false,flatten(m_object));
-    var ploc_object = gl.getUniformLocation(program_object,"projectionMatrix");
-    gl.uniformMatrix4fv(ploc_object,false,flatten(P));
-    var vloc_object = gl.getUniformLocation(program_object,"viewMatrix");
-    gl.uniformMatrix4fv(vloc_object,false,flatten(V));
-
+    var mloc_object = gl.getUniformLocation(program_object, "modelMatrix");
+    gl.uniformMatrix4fv(mloc_object, false, flatten(m_object));
+    var pLoc_object = gl.getUniformLocation(program_object, "projectionMatrix");
+    gl.uniformMatrix4fv(pLoc_object, false, flatten(P));
+    var vLoc_object = gl.getUniformLocation(program_object, "viewMatrix");
+    gl.uniformMatrix4fv(vLoc_object, false, flatten(V));
 
 
     /*
@@ -235,6 +236,7 @@ window.onload = function init(){
         var a = diffuseSlider.value;
         //Set green to zero
         materialDiffuse = vec4(a,a,a,1.0); 
+        console.log("he");
         diffuseProduct = mult(lightDiffuse,materialDiffuse);
         gl.uniform4fv( gl.getUniformLocation(program_object, "diffuseProduct"), flatten(diffuseProduct) );
     });
@@ -268,6 +270,7 @@ window.onload = function init(){
    
     function tick() {
         requestAnimationFrame(tick);
+        
         if (!g_drawingInfo && g_objDoc && g_objDoc.isMTLComplete()) {
             // OBJ and all MTLs are available
             g_drawingInfo = onReadComplete(gl, model, g_objDoc);
@@ -279,16 +282,17 @@ window.onload = function init(){
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.useProgram(program_surface);
         
-        initAttributeVariable(program_surface.v_Position, vBuffer_surface);
-        initAttributeVariable(program_surface.v_TexCord, tBuffer);
+        initAttributeVariable(gl,program_surface.v_Position, vBuffer_surface);
+        initAttributeVariable(gl,program_surface.v_TexCord, tBuffer);
         
         // Draw ground plane
         gl.uniform1i(tMLoc, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER,vBuffer_surface);
-        gl.uniform1i(tMLoc, 0);
+        
         gl.bufferData(gl.ARRAY_BUFFER, flatten(Plane), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, Plane.length);
+        
         
         gl.useProgram(program_object);
         
@@ -306,13 +310,13 @@ window.onload = function init(){
             matrixShadow = mult(matrixShadow,M); 
             gl.uniformMatrix4fv(shadowMLoc, false, flatten(matrixShadow));
         }
-        M_object = mat4();
+        //M_object = mat4();
        
-        gl.uniformMatrix4fv(mloc_object, false, flatten(m_object));
-        
-        initAttributeVariable(program_object.v_Position, model.vertexBuffer);
-        initAttributeVariable(program_object.normal, model.normalBuffer);
-        initAttributeVariable(program_object.v_Color, model.colorBuffer);
+        //gl.uniformMatrix4fv(mloc_object, false, flatten(m_object));
+       
+        initAttributeVariable(gl,program_object.v_Position, model.vertexBuffer);
+        initAttributeVariable(gl,program_object.normal, model.normalBuffer);
+        initAttributeVariable(gl,program_object.v_Color, model.colorBuffer);
 
     
         
@@ -327,6 +331,7 @@ window.onload = function init(){
         gl.uniform1i(shadowLoc, false);
         gl.depthFunc(gl.LESS);
         gl.drawElements(gl.TRIANGLES, g_drawingInfo.indices.length, gl.UNSIGNED_SHORT, 0);
+        
     }
     tick();
     function onReadComplete(gl, model, objDoc) { 
@@ -348,64 +353,75 @@ window.onload = function init(){
     
         return drawingInfo;
     }
-    function initAttributeVariable(a_attribute, buffer,num,buffertype) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.vertexAttribPointer(a_attribute, num, buffertype, false, 0, 0);
-        gl.enableVertexAttribArray(a_attribute);
-    }
-    function initObject(obj_filename, scale,program)
-    {
-        program.v_Position = gl.getAttribLocation(program, 'v_Position');
-        program.normal = gl.getAttribLocation(program, 'normal');
-        program.v_Color = gl.getAttribLocation(program, 'v_Color');
-        // Prepare empty buffer objects for vertex coordinates, colors, and normals
-        var model = initVertexBuffers(program);
-        // Start reading the OBJ file
-        readOBJFile(obj_filename, gl, model, scale, true);
-        return model;
-    }
-    // Create a buffer object and perform the initial configuration
-    function initVertexBuffers(program) { 
-        var o = new Object();
-        o.vertexBuffer = createEmptyArrayBuffer(program.v_Position,3,gl.FLOAT);
-        o.normalBuffer = createEmptyArrayBuffer(program.normal,3,gl.FLOAT);
-        o.colorBuffer = createEmptyArrayBuffer(program.v_Color,4,gl.FLOAT);
-        o.indexBuffer = gl.createBuffer();
-        return o;
-    }
-    
-    function createEmptyArrayBuffer(a_attribute, num, type) { 
-        var buffer = gl.createBuffer(); // Create a buffer object
-        gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-        gl.vertexAttribPointer(a_attribute,num,type,false,0,0);
-        gl.enableVertexAttribArray(a_attribute);
-        return buffer;
-    }
-    // Asynchronous file loading (request, parse, send to GPU buffers)
-    function readOBJFile(fileName, model, scale, reverse) { 
-        var request = new XMLHttpRequest();
-        request.onreadystatechange= function(){
-            if(request.readyState===4 && request.status !==404){
-                onReadOBJFile(request.responseText,fileName,gl,model,scale,reverse);
-            }
-        }
-        request.open('GET',fileName,true); //Create request
-        request.send();
-    }
-    
-    
-    function onReadOBJFile(fileString, fileName, o, scale, reverse) { 
-        var objDoc = new OBJDoc(fileName);
-        var result = objDoc.parse(fileString,scale,reverse);
-        if(!result){
-            g_objDoc = null; 
-            g_drawingInfo = null;
-            console.log("OBJ file has a passing error");
-            return;
-        }
-        g_objDoc=objDoc;
-    }
 
 
+
+}
+
+function initAttributeVariable(gl, attribute, buffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(attribute, buffer.num, buffer.type, false, 0, 0);
+    gl.enableVertexAttribArray(attribute);
+}
+
+// Create a buffer object and perform the initial configuration
+function initVertexBuffers(gl, program) {
+    var model = new Object();
+    model.vertexBuffer = createEmptyArrayBuffer(gl, program.a_Position, 3, gl.FLOAT);
+    model.normalBuffer = createEmptyArrayBuffer(gl, program.a_Normal, 3, gl.FLOAT);
+    model.colorBuffer = createEmptyArrayBuffer(gl, program.a_Color, 4, gl.FLOAT);
+    model.indexBuffer = gl.createBuffer();
+    return model;
+}
+
+function createEmptyArrayBuffer(gl, a_attribute, num, type) {
+    var buffer = gl.createBuffer(); // Create a buffer object
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(a_attribute, num, type, false, 0, 0);
+    gl.enableVertexAttribArray(a_attribute); // Enable the assignment
+
+    return buffer;
+}
+
+// Read a file
+function readOBJFile(fileName, gl, model, scale, reverse) {
+    var request = new XMLHttpRequest();
+
+    request.onreadystatechange = function() {
+        if (request.readyState === 4 && request.status !== 404) {
+            onReadOBJFile(request.responseText, fileName, gl, model, scale, reverse);
+        }
+    }
+    request.open('GET', fileName, true);
+    request.send(); 
+}
+
+
+// OBJ file has been read, has been re-written t stop bugs
+function onReadOBJFile(fileString, fileName, gl, model, scale, reverse) {
+    var objDoc = new OBJDoc(fileName); 
+    var result = objDoc.parse(fileString, scale, reverse);
+    if (!result) {
+        g_objDoc = null; g_drawingInfo = null;
+        console.log("OBJ file parsing error.");
+        return;
+    }
+    g_objDoc = objDoc;
+}
+
+function onReadComplete(gl, model, objDoc) {
+    // Acquire the vertex coordinates and colors from OBJ file
+    var drawingInfo = objDoc.getDrawingInfo();
+    // Write date into the buffer object
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.vertices,gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.normals, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, drawingInfo.colors, gl.STATIC_DRAW);
+    // Write the indices to the buffer object
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, drawingInfo.indices, gl.STATIC_DRAW);
+    return drawingInfo;
 }
 
