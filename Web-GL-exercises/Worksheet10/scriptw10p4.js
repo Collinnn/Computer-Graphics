@@ -34,7 +34,7 @@ window.onload = function init(){
     
 
     //import shaders
-    var program = initShaders(gl, "Shaders/vshaderw10p3.glsl", "Shaders/fshaderw10p3.glsl");
+    var program = initShaders(gl, "Shaders/vshaderw10p4.glsl", "Shaders/fshaderw10p4.glsl");
     gl.useProgram(program);
     
     gl.enable(gl.DEPTH_TEST);
@@ -201,6 +201,7 @@ window.onload = function init(){
     });
 
     var mousepressed = false; 
+    var tolerance = 0.1;
     var x0 = -1, y0 = -1 ;
     var qIncrement = new Quaternion();
     var qRotation = new Quaternion();
@@ -217,6 +218,9 @@ window.onload = function init(){
         var rectangle = ev.target.getBoundingClientRect();
         //stops if mouse is outside of canvas
         if(rectangle.left <=x && x<rectangle.right && rectangle.top <= y && y<rectangle.bottom){
+            if(tolerance>Math.abs(x-x0) && tolerance>Math.abs(y-y0)){
+                qIncrement.setIdentity();
+            }
             x0=x;
             y0=y;
             mousepressed = true;
@@ -224,7 +228,7 @@ window.onload = function init(){
     }
     canvas.onmouseup = function(ev){
         mousepressed=false;
-        qIncrement.setIdentity();
+        
     }
     var deltaX = 0; 
     var deltaY = 0;
@@ -258,12 +262,15 @@ window.onload = function init(){
                 break;
                 
             }
+            sxprev = x;
+            syprev=y;
 
         }
         x0 = x;
         y0 = y;
     }
 
+ 
 
     
     function tick(){
@@ -288,10 +295,7 @@ window.onload = function init(){
                 look[2] - (deltaX * qRotationX[2] + deltaY * qRotationY[2]));
         V = lookAt(add(qRotation.apply(vec3(0, 0, eye[2])), c), c, qRotation.apply(up));
         gl.uniform4f(eLoc, e[0],e[1],e[2],eye[3]);
-
-
-
-     
+ 
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         gl.uniformMatrix4fv(ploc, false, flatten(P));
         gl.uniformMatrix4fv(mloc, false, flatten(M));
