@@ -1,6 +1,5 @@
 var gl;
 
-
 var colors=[
     vec4(0.0,0.0,0.0,1.0), // Black
     vec4(1.0,0.0,0.0,1.0), // Red
@@ -33,7 +32,7 @@ window.onload = function init(){
     
 
     //import shaders
-    var program = initShaders(gl, "Shaders/vshaderw10p1.glsl", "Shaders/fshaderw10p1.glsl");
+    var program = initShaders(gl, "Shaders/vshaderw10p2.glsl", "Shaders/fshaderw10p2.glsl");
     gl.useProgram(program);
     
     gl.enable(gl.DEPTH_TEST);
@@ -201,7 +200,9 @@ window.onload = function init(){
 
     var mousepressed = false; 
     var x0 = -1, y0 = -1 ;
-    var rotationX = 0, rotationY = 0;
+    var qIncrement = new Quaternion();
+    var qRotation = new Quaternion();
+
     canvas.onmousedown = function(ev){
         x=ev.clientX;
         y=ev.clientY;
@@ -215,14 +216,24 @@ window.onload = function init(){
     }
     canvas.onmouseup = function(ev){
         mousepressed=false;
+        qIncrement.setIdentity();
     }
 
     canvas.onmousemove = function(ev){
         x=ev.clientX;
         y=ev.clientY;
         if(mousepressed){
-            rotationX += 0.2 * (x-x0);
-            rotationY += 0.2 * (y-y0);
+            var rectangle = ev.target.getBoundingClientRect();
+            sx = ((x-rectangle.left)/rectangle.width-0.5)*2; // scale x
+            sy = (0.5-(y-rectangle.top)/ rectangle.height)*2;
+            sxprev = ((x0-rectangle.left)/rectangle.width-0.5)*2;
+            syprev = (0.5-(y0-rectangle.top)/rectangle.height)*2;
+            
+            u = vec3(sx,sy,projectOrth(sx,sy,radius)); // To quartinion space
+            v = vec3(sxprev,syprev,projectOrth(sxprev,syprev,radius)); // To quartinion space
+
+            qIncrement = qIncrement.make_rot_vec2vec(normalize(u),normalize(v));
+            qRotation = qRotation.multiply(qIncrement);
         }
         x0 = x;
         y0 = y;
@@ -230,6 +241,7 @@ window.onload = function init(){
 
     
     function tick(){
+        requestAnimationFrame(tick);
         pointsArray = new Array();
         normalsArray = new Array();
 
@@ -238,10 +250,10 @@ window.onload = function init(){
         
         gl.uniform4f(eLoc, eye[0], eye[1], eye[2], 1.0);
         eye = vec4(0.0,0.0,radius,1.0);
-        var translated = mult(mult(rotateY(-rotationX),rotateX(-rotationY)),eye);
+        var translated = qRotation.apply(vec3(eye[0],eye[1],eye[2]));
+        V = lookAt(vec3(translated[0],translated[1],translated[2]), look, qRotation.apply(up));
         
-        V = lookAt(vec3(translated[0],translated[1],translated[2]), look, up);
-        
+        gl.uniform4f(eLoc,translated[0],translated[1],translated[2],1.0);
         gl.uniformMatrix4fv(vloc, false, flatten(V));
         gl.uniformMatrix4fv(ploc, false, flatten(P));
         gl.uniformMatrix4fv(mloc, false, flatten(M));
@@ -250,8 +262,8 @@ window.onload = function init(){
      
         
         // Filters comes with error that it's not used. But removal breaks, so they are used. 
-        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         
         gl.uniformMatrix4fv(tMLoc, false, flatten(mat4()));
         
@@ -282,9 +294,22 @@ window.onload = function init(){
         gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, background.length);
-        requestAnimationFrame(tick);
+        
     }
     tick();
 }
 
-
+//Projects to Orthonigal space
+function projectOrth(x,y,radius){
+    
+    var d= Math.sqrt(x*x + y*y);
+    var t= radius*Math.sqrt(2);
+    if(d<radius){
+        return Math.sqrt(radius*radius-d*d);
+    }else if(d<t){
+        return 0;
+       
+    }else{
+        return t*t/d;
+    }
+}
