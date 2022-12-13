@@ -56,7 +56,60 @@ window.onload = function init(){
     var diffuseProduct = mult(lightDiffuse,materialDiffuse);
     var specularProduct = mult(lightSpecular,materialSpecular);
     
+    function initObject(gl, obj_filename, scale)
+    {
+        gl.program.v_Position = gl.getAttribLocation(gl.program, 'v_Position');
+        gl.program.normal = gl.getAttribLocation(gl.program, 'normal');
+        gl.program.v_Color = gl.getAttribLocation(gl.program, 'v_Color');
+        // Prepare empty buffer objects for vertex coordinates, colors, and normals
+        var model = initVertexBuffers(gl);
+        // Start reading the OBJ file
+        readOBJFile(obj_filename, gl, model, scale, true);
+        return model;
+    }
+        // Create a buffer object and perform the initial configuration
+        function initVertexBuffers(gl,program) { 
+            var o = new Object();
+            o.vertexBuffer = createEmptyArrayBuffer(gl,gl.program.v_Position,3,gl.FLOAT);
+            o.normalBuffer = createEmptyArrayBuffer(gl,gl.program.normal,3,gl.FLOAT);
+            o.colorBuffer = createEmptyArrayBuffer(gl,gl.program.v_Color,4,gl.FLOAT);
+            o.indexBuffer = gl.createBuffer();
+            return o;
+        }
+        
+        function createEmptyArrayBuffer(gl, a_attribute, num, type) { 
+            var buffer = gl.createBuffer(); // Create a buffer object
+            gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+            gl.vertexAttribPointer(a_attribute,num,type,false,0,0);
+            gl.enableVertexAttribArray(a_attribute);
+            return buffer;
+        }
+        // Asynchronous file loading (request, parse, send to GPU buffers)
+        function readOBJFile(fileName, gl, model, scale, reverse) { 
+            var request = new XMLHttpRequest();
 
+            request.onreadystatechange= function(){
+                if(request.readyState===4 && request.status !==404){
+                    onReadOBJFile(request.responseText,fileName,gl,model,scale,reverse);
+                }
+            }
+            request.open('GET',fileName,true); //Create request
+            request.send();
+        }
+
+
+        function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) { 
+            var objDoc = new OBJDoc(fileName);
+            var result = objDoc.parse(fileString,scale,reverse);
+            if(!result){
+                g_objDoc = null; 
+                g_drawingInfo = null;
+                console.log("OBJ file has a passing error");
+                return;
+            }
+            g_objDoc=objDoc;
+
+        }
 
         var model = initObject(gl,"../Models/Suzanne.obj",1);
 
@@ -215,57 +268,3 @@ function onReadComplete(gl, model, objDoc) {
 
     return drawingInfo;
 }
-function initObject(gl, obj_filename, scale)
-{
-    gl.program.v_Position = gl.getAttribLocation(gl.program, 'v_Position');
-    gl.program.normal = gl.getAttribLocation(gl.program, 'normal');
-    gl.program.v_Color = gl.getAttribLocation(gl.program, 'v_Color');
-    // Prepare empty buffer objects for vertex coordinates, colors, and normals
-    var model = initVertexBuffers(gl);
-    // Start reading the OBJ file
-    readOBJFile(obj_filename, gl, model, scale, true);
-    return model;
-}
-    // Create a buffer object and perform the initial configuration
-    function initVertexBuffers(gl,program) { 
-        var o = new Object();
-        o.vertexBuffer = createEmptyArrayBuffer(gl,gl.program.v_Position,3,gl.FLOAT);
-        o.normalBuffer = createEmptyArrayBuffer(gl,gl.program.normal,3,gl.FLOAT);
-        o.colorBuffer = createEmptyArrayBuffer(gl,gl.program.v_Color,4,gl.FLOAT);
-        o.indexBuffer = gl.createBuffer();
-        return o;
-    }
-    
-    function createEmptyArrayBuffer(gl, a_attribute, num, type) { 
-        var buffer = gl.createBuffer(); // Create a buffer object
-        gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-        gl.vertexAttribPointer(a_attribute,num,type,false,0,0);
-        gl.enableVertexAttribArray(a_attribute);
-        return buffer;
-    }
-    // Asynchronous file loading (request, parse, send to GPU buffers)
-    function readOBJFile(fileName, gl, model, scale, reverse) { 
-        var request = new XMLHttpRequest();
-
-        request.onreadystatechange= function(){
-            if(request.readyState===4 && request.status !==404){
-                onReadOBJFile(request.responseText,fileName,gl,model,scale,reverse);
-            }
-        }
-        request.open('GET',fileName,true); //Create request
-        request.send();
-    }
-
-
-    function onReadOBJFile(fileString, fileName, gl, o, scale, reverse) { 
-        var objDoc = new OBJDoc(fileName);
-        var result = objDoc.parse(fileString,scale,reverse);
-        if(!result){
-            g_objDoc = null; 
-            g_drawingInfo = null;
-            console.log("OBJ file has a passing error");
-            return;
-        }
-        g_objDoc=objDoc;
-
-    }
