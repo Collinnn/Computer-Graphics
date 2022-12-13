@@ -228,40 +228,42 @@ window.onload = function init(){
     }
     canvas.onmouseup = function(ev){
         mousepressed=false;
-        
     }
     var deltaX = 0; 
     var deltaY = 0;
+
     canvas.onmousemove = function(ev){
         x=ev.clientX;
         y=ev.clientY;
         if(mousepressed){
+           
             var rectangle = ev.target.getBoundingClientRect();
             sx = ((x-rectangle.left)/rectangle.width-0.5)*2; // scale x
             sy = (0.5-(y-rectangle.top)/ rectangle.height)*2;
             sxprev = ((x0-rectangle.left)/rectangle.width-0.5)*2;
             syprev = (0.5-(y0-rectangle.top)/rectangle.height)*2;
-            switch(camera){
-                case "Orbit": 
-                    u = vec3(sx,sy,projectOrth(sx,sy,radius)); // To quartinion space
-                    v = vec3(sxprev,syprev,projectOrth(sxprev,syprev,radius)); // To quartinion space
-        
-                    qIncrement = qIncrement.make_rot_vec2vec(normalize(u),normalize(v));
-                    qRotation = qRotation.multiply(qIncrement);
-                break;
-                case "Dolly":
 
-                    eye[2] += (sy-syprev);
-                    eye[2] = Math.max(eye[2],1.1);
-                    
-                break;
-                case "Panning":
-                    deltaX += (sx-sxprev)*eye[2]*0.25;
-                    deltaY += (sy-syprev)*eye[2]*0.25;
-
-                break;
+                switch(camera){
+                    case "Orbit": 
+                        u = vec3(sx,sy,projectOrth(sx,sy,radius)); // To quartinion space
+                        v = vec3(sxprev,syprev,projectOrth(sxprev,syprev,radius)); // To quartinion space
                 
-            }
+                        qIncrement = qIncrement.make_rot_vec2vec(normalize(u),normalize(v));
+                    break;
+                    case "Dolly":
+
+                        eye[2] += (sy-syprev);
+                        eye[2] = Math.max(eye[2],1.1);
+
+                    break;
+                    case "Panning":
+                        deltaX += (sx-sxprev)*eye[2]*0.25;
+                        deltaY += (sy-syprev)*eye[2]*0.25;
+
+                    break;
+
+                }
+ 
             sxprev = x;
             syprev=y;
 
@@ -275,7 +277,7 @@ window.onload = function init(){
     
     function tick(){
         requestAnimationFrame(tick);
- 
+        
         // Filters comes with error that it's not used. But removal breaks, so they are used. 
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -290,6 +292,7 @@ window.onload = function init(){
         e = qRotation.apply(vec3(eye[0], eye[1], eye[2]));
         qRotationX = qRotation.apply(vec3(1, 0, 0));
         qRotationY = qRotation.apply(up);
+        qRotation = qRotation.multiply(qIncrement);
         c = vec3(look[0] - (deltaX * qRotationX[0] + deltaY * qRotationY[0]), 
                 look[1] - (deltaX * qRotationX[1] + deltaY * qRotationY[1]), 
                 look[2] - (deltaX * qRotationX[2] + deltaY * qRotationY[2]));
