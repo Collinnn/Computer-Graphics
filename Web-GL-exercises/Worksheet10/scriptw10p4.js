@@ -272,11 +272,11 @@ window.onload = function init(){
         y0 = y;
     }
 
- 
 
     
-    function tick(){
-        requestAnimationFrame(tick);
+    function render(){
+
+
         
         // Filters comes with error that it's not used. But removal breaks, so they are used. 
         gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
@@ -337,9 +337,10 @@ window.onload = function init(){
         gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, background.length);
-        
+                
+        requestAnimationFrame(render);
     }
-    tick();
+    render();
 }
 
 //Projects to Orthonigal space

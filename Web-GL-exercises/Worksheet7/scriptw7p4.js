@@ -199,7 +199,7 @@ window.onload = function init(){
 
     });
     
-    function tick(){
+    function render(){
         pointsArray = new Array();
         normalsArray = new Array();
 
@@ -250,9 +250,9 @@ window.onload = function init(){
         gl.bindBuffer(gl.ARRAY_BUFFER, vbuffer);
         gl.bufferData(gl.ARRAY_BUFFER, flatten(background), gl.STATIC_DRAW);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, background.length);
-        requestAnimationFrame(tick);
+        requestAnimFrame(render);
     }
-    tick();
+    render();
 }
 
 
