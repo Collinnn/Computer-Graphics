@@ -1,0 +1,41 @@
+<html>
+<head>        
+
+</head>
+<title>Week Three part 3</title>
+<body>
+The first matrix used is the translation matrices. It takes a matrix and moves it according to the matrix, in webgl that is x,y and z.
+<br>
+It does this by maiking an identity matrix and adding a row for the values 
+<br>
+Second matrix is the rotation matrix, which is a matrix of cos and sin set at different parts of the matrix. The calculation is:
+<br>
+input*rotationMatrix
+<br>
+Then comes model, view, projection matricies
+<br>
+Firstly the model matrix holds the model, which is trying to be rendered, this works by using these earlier mentioned matrices to rotate and control the model
+<br>
+The lookAt function which figures out the view matrix, takes 3 coordinates <br>
+eye, which is the location of the camera <br>
+look, which is the location your looking at <br>
+up, which works as saying which way up is <br>
+From here 3 functions are used on them. 
+Firstly b3 which is normalized(at-eye), then b1 can be calculated as the normalized crossproduct of b3 and the up point <br>
+Lastly b2 is calculated as the crossproduct of b3 and b1. 
+These are all used to make the final viewmatrix
+<br>
+Finally the projection matrix takes model from eye space to clip space, by using a last matrix transformation. The perspective function: <br>
+it works by taking field of view, aspect, the near plane and the far plane and rendering in between that. It does this by finding the cotangent of the field of view and the aspect.
+<br>
+And using the distances given. 
+
+<br>
+The final calculation is: <br>
+projection*view*model*v_pos, where vpos is the original positions of the model as given i object space <br>
+So we go from object, to world, to eye and finally to clip space.
+ 
+
+
+</body>
+</html>

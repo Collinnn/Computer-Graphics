@@ -1,0 +1,33 @@
+<html>
+<head>        
+
+</head>
+<title>Week Four part 5</title>
+<body>A<br>
+Phong shading is the interpolation between vectors.<br>
+Phong lighting is the calculation of the difuse, ambient and specular highlight into a phong reflection model.
+<br>B<br>
+Flat shading is one calculation per polygon, this makes entire surfaces one distinct color from the shading.<br>
+
+The drawbacks are that no highlight is calculated, if it doesn’t hit any of the points, and color transistions are not possible. <br>
+Main feature, it's very fast since very little is calculated. <br>
+Gouraud shadings lighting is still done per vertex, exepct now the normals are used on a per pixel basis to make color transitions better <br>
+Main feature is that it gives a lot more shadow depth than flat shading could. The drawback is that highlights and lighting erros can become quite large on big triangles <br>
+Phong shading moves away from doing the lighting on a per vecticies to a per pixel, this makes it look much more like real life <br>
+Main drawback is that it's very intensive to calculate, phong is per fragment, and garoud is per vertices. <br>
+Main advantage is that it looks really good, and begins to mimic real light. 
+
+
+<br>C<br>
+Point light is light comes from a singular point, this makes all light originate from a single point<br>
+Directional light is that all light comes equally from one direction. An area light infinitely long and infinitely far from the object. <br>
+<br>D<br>
+Yes normaly we need to known the eye position to calculate glossy values, since we need to know if the camera would see any glossy component<br>
+<br>E<br>
+That the specular highlight would disapear and no longer be shown, the object is now matte.
+<br>F<br>
+That the highlight will become smaller.
+<br>G<br>
+It is calculated in eye space. 
+</body>
+</html>
