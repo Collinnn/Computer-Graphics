@@ -117,6 +117,11 @@ window.onload = function init(){
         image.src = cubemap[i];
     }
     gl.uniform1i(gl.getUniformLocation(program, "texCubeMap"), 0);
+
+    //Stops sometimes crashes of the program.
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
     
     gl.activeTexture(gl.TEXTURE1);
     var texture = gl.createTexture();

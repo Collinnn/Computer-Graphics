@@ -104,6 +104,7 @@ window.onload = function init(){
         gl.generateMipmap(gl.TEXTURE_2D);
     }
     image.src = "../Models/xamp23.png";
+    
 
     //Set texture parameters:
 

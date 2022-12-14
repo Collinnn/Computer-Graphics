@@ -117,6 +117,9 @@ window.onload = function init(){
     }
     gl.uniform1i(gl.getUniformLocation(program, "texCubeMap"), 0);
 
+    //Stops sometimes crashes of the program at startup.
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     
 
     //create vertex buffer

@@ -109,7 +109,7 @@ window.onload = function init(){
     function initTetrahedron(gl,numberSubdiv){
 
         tretrahedron(va,vb,vc,vd,numberSubdiv);
-
+        
         //create vertex buffer
         gl.deleteBuffer(gl.vBuffer);
         gl.vBuffer = gl.createBuffer();
@@ -221,6 +221,8 @@ window.onload = function init(){
 
     var spin = 0.0;
     function tick(){
+        pointsArray = new Array();
+        normalsArray = new Array();
         M=mult(M,rotateX(spin));
         M=mult(M,rotateY(spin));
         M=mult(M,rotateZ(spin));
