@@ -38,6 +38,17 @@
 -- support HTML5 -->
 Sorry; your web browser does not support HTML5 canvas element.
 </canvas>
+<br>
+All of them require first to get the uv coordinates after which they can be used.
+<br>
+Nearest<br>
+Nearest works great up close and the further away you get, the less good it is, the hard edges are also not smooth<br>
+Linear<br>
+Linear is bilinear interpolation, which can be seen to create fussy lines close but works great close. <br>
+MipMap<br>
+This works great close, however as we move further away, grey becomes more previlant as it takes the average of the pixels, until nothing can be seen anymore <br>
+Clamping-to-edge<br>
+
 
 
 

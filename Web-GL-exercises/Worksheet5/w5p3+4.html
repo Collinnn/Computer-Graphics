@@ -30,8 +30,10 @@ Sorry; your web browser does not support HTML5 canvas element.
 <label for="LightEmission">LightEmission</label>
 <input id="LightEmission" type="range" min="0" max="1" step="0.05" value="1"/>
 <br>
-The normals are loaded from the model and are being interpolated by Phong shading.
-Since the highlight is only calculated once for each triangle it leads to a weird highlight.
+The normals are loaded from the model and are being interpolated by Phong shading.<br>
+Since the highlight is only calculated once for each triangle it leads to a weird highlight. <br>
+The surface normals are each calculated for each triangle, this is done with a simple calculation, where <br>
+firstly the bayeric coordinates are calculated and then the normals for x,y and z can be calculated. Which is then put together to a normal map <br>
 
 
 </body>

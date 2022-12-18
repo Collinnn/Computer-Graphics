@@ -4,6 +4,9 @@
 </head>
 <title>Week Three part 3</title>
 <body>
+A
+<br>
+
 The first matrix used is the translation matrices. It takes a matrix and moves it according to the matrix, in webgl that is x,y and z.
 <br>
 It does this by maiking an identity matrix and adding a row for the values 
@@ -34,7 +37,16 @@ And using the distances given.
 The final calculation is: <br>
 projection*view*model*v_pos, where vpos is the original positions of the model as given i object space <br>
 So we go from object, to world, to eye and finally to clip space.
- 
+<br>B
+<br>
+Each of them is translated and rotated.
+First square:<br>
+rotationY(20 degrees)*translated(-2,0,-7.5)<br>
+Second square <br>
+translated(0,0,-7.5), the square is just rendered in the middle, without tilt. <br>
+Third square <br>
+rotationX(20)*rotationY(40)*Translated(0,2,-7.5)
+
 
 
 </body>
